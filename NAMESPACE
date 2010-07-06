@@ -1,0 +1,5 @@
+useDynLib(flowSPD)
+export(
+    "FlowSPD.density",
+    "FlowSPD.addDensityToFCS"
+)
