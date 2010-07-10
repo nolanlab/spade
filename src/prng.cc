@@ -1,0 +1,26 @@
+#include "prng.h"
+
+// Galois polynomials for maximum length PRBS
+const uint32_t PRNG::polynomial[] = {
+	    0x0, 
+	    0x0,
+	    0x3,
+	    0x6,
+	    0xC,
+	    0X14,
+	    0x30,
+	    0x60,
+	    0xB8,
+	    0x110,
+	    0x240,
+	    0x500,
+	    0xE08,
+	    0x1C80,
+	    0x3802,
+	    0x6000,
+	    0xB400,
+	    0x12000,
+	    0x20400,
+	    0x72000
+	};
+

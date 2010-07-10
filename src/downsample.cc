@@ -7,11 +7,11 @@
 #include <algorithm>
 #include <vector>
 
-#define assert(X) { if (!(X)) { error("Assertion Failure %s [%s:%d]: %s\n",__FUNCTION__,__FILE__,__LINE__,#X); } }
+#include "util.h"
+#include "prng.h"
 
 namespace {
 
-  
     typedef double Data_t;
     typedef double Dist_t;
     typedef int    Count_t;
@@ -24,54 +24,6 @@ namespace {
 	return d_l;
     }
 
-    // Produce a unique stream of pseudo random numbers using Galois LFSR 
-    class PRNG {
-	static const uint32_t polynomial[];	
-	uint32_t lfsr, mask;
-
-    public:
-	PRNG(size_t min_period) : lfsr(1) {
-	    uint32_t bits = (uint32_t)ceil(log2(min_period+1)); 
-	    assert(bits >= 2 && bits < 20);
-	    mask = polynomial[bits];
-	}
-
-	void seed(uint32_t s) { assert(s); lfsr = s; }
-
-	uint32_t sample() {
-	    lfsr = (lfsr >> 1) ^ (uint32_t)(0 - (lfsr & 1u) & mask);
-	    return lfsr;
-	}
-	uint32_t sample(uint32_t n) {
-	    uint32_t s;
-	    do { s = sample(); } while (s >= n);
-	    return s;
-	}
-    };
-
-    const uint32_t PRNG::polynomial[] = {
-	    0x0, 
-	    0x0,
-	    0x3,
-	    0x6,
-	    0xC,
-	    0X14,
-	    0x30,
-	    0x60,
-	    0xB8,
-	    0x110,
-	    0x240,
-	    0x500,
-	    0xE08,
-	    0x1C80,
-	    0x3802,
-	    0x6000,
-	    0xB400,
-	    0x12000,
-	    0x20400,
-	    0x72000
-	};
-
     Dist_t 
     compute_median_min_dist(Data_t *data, size_t dim, size_t obs, size_t num_samples) {			
 	PRNG prng(num_samples);
@@ -81,11 +33,13 @@ namespace {
 	for (size_t i=0; i<num_samples; i++) {
 	    uint32_t idx;
 	    
+	    // Potential for race condition in PRNG state
 	    #pragma omp critical
 	    {
 		idx = (prng.sample(num_samples+1)-1);
 	    }
 
+	    // Compute distance to all other neighbors (skipping myself)
 	    Data_t *point = &data[idx*dim];
 	    Dist_t min_l = std::numeric_limits<Dist_t>::max();
 	    for (size_t j=0; j<idx; j++)
@@ -113,7 +67,7 @@ namespace {
 	    if (densities[i] > 0)
 		continue;
 
-	    std::vector<size_t> apprxs;
+	    std::vector<size_t> apprxs;  // Keep track on observations we can approximate
 	    Data_t *point = &data[i*dim];
 	    Count_t c = 0;
 
@@ -126,6 +80,8 @@ namespace {
 		    c++;
 	    }
 
+	    // Potential race condition on other density entries, use atomic
+	    // update to be safe
 	    for (size_t j=0; j<apprxs.size(); j++)
 		__sync_bool_compare_and_swap(densities+apprxs[j],0,c); //densities[apprxs[j]] = c;
 	    densities[i] = c;
