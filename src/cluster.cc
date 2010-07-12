@@ -8,7 +8,14 @@
 #include <vector>
 #include <utility>
 #include <functional>
+#include <set>
+
+#ifdef HAVE_PARALLEL_STL
 #include <parallel/algorithm>
+#define PARALLEL_NAMESPACE std::__parallel
+#else
+#define PARALLEL_NAMESPACE std
+#endif
 
 #include "prng.h"
 
@@ -78,7 +85,7 @@ namespace {
     possible_merges(const Dist_t *pair, size_t obs, size_t fold, const BV_t& merged, 
 		    size_t idx, size_t* idxs_begin, size_t* idxs_end) {
 	LT lt(pair, obs, idx, merged);
-	std::__parallel::partial_sort(idxs_begin, idxs_begin+fold, idxs_end, lt);   
+	PARALLEL_NAMESPACE::partial_sort(idxs_begin, idxs_begin+fold, idxs_end, lt);   
     }
 
     void
@@ -104,37 +111,21 @@ namespace {
 	bool operator()(const size_t a) const { return pred[a]; }
     };
 
-} // anonymous namespace
-
-
-extern "C" {
-
-    SEXP 
-    FSPD_cluster(SEXP tbl, SEXP k) {
-	// tbl is column major order, transposed to be row major
-	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
-	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
-	size_t k_l = static_cast<size_t>(asInteger(k));
-
-	Rprintf("Obs: %zu Dim: %zu\n",obs,dim);
-
-	SEXP merge;
-	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1));
-	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
-
-	Dist_t *pair = new Dist_t[obs*(obs-1)/2]; // Declare a triangular matrix for pairwise distances
-	pairwise_distances(static_cast<Data_t*>(REAL(tbl)), dim, obs, pair); 
+    void
+    cluster(const Data_t* data, size_t obs, size_t dim, Idx_t* merge) {   
+	Dist_t *pair = Calloc(obs*(obs-1)/2,Dist_t); // Declare a triangular matrix for pairwise distances
+	pairwise_distances(data, dim, obs, pair); 
 
 	std::vector<bool> valid(obs, true), merged(obs, false);
-	size_t *idxs = new size_t[obs]; for (size_t i=0; i<obs; i++) { idxs[i] = i; }
-	Idx_t  *clst = new Idx_t[obs];  for (Idx_t i=0;  i<obs; i++) { clst[i] = -i-1; }
+	size_t *idxs = Calloc(obs,size_t); for (size_t i=0; i<obs; i++) { idxs[i] = i; }
+	Idx_t  *clst = Calloc(obs,Idx_t);  for (Idx_t i=0;  i<obs; i++) { clst[i] = -i-1; }
 
 	size_t merge_idx = 0, merge_round = 0;
 
 	TF tf_v(valid), tf_m(merged);
 
 	size_t *idxs_end = idxs + obs; // End of valid indices
-	while (merge_idx < (obs-k_l)) {
+	while (merge_idx < (obs-1)) {
 
 	    Rprintf("Merging round %zu ...\n", merge_round++);
 
@@ -148,10 +139,10 @@ extern "C" {
 	    while (true) {
 
 		// Find first un-merged cluster 
-		size_t into, *into_p = std::__parallel::find_if(idxs, idxs_end, std::not1(tf_m));
+		size_t *into_p = PARALLEL_NAMESPACE::find_if(idxs, idxs_end, std::not1(tf_m));
 		if (into_p == idxs_end)
 		    goto END_ROUND;
-		into = *into_p;
+		size_t into = *into_p;
 
 		merged[into] = true; // Mark as merged in this round
 
@@ -167,19 +158,86 @@ extern "C" {
 		    single_linkage(pair, obs, into, from);    // Update distances	
 
 		    // Update history of cluster merges
-		    merge_l[merge_idx*2] = clst[into]; merge_l[merge_idx*2+1] = clst[from];
+		    merge[merge_idx*2] = clst[into]; merge[merge_idx*2+1] = clst[from];
 		    clst[into] = merge_idx++ + 1;
 		}
 	    }
 END_ROUND:;
 	}	
 
-	delete idxs;
-	delete clst; 
-	delete pair;
+	Free(idxs);
+	Free(clst); 
+	Free(pair);
+    }
 
-	UNPROTECT(1);
-	return merge;
+    void
+    live_clusters(const Idx_t* merge, size_t obs, size_t k, std::set<Idx_t>& clusters) { 
+	clusters.insert((Idx_t)obs-1); // Initialize with "final" cluster
+	for (size_t i=obs-2; i>=0; i--) {
+	    if (clusters.size() >= k)
+		break;
+	    clusters.erase((Idx_t)(i+1)); // Recall cluster Ids of 1-indexed
+	    clusters.insert(merge[2*i]);
+	    clusters.insert(merge[2*i+1]);
+	}
+    }
+
+    void
+    assign_observation(const Idx_t* merge, Idx_t cluster, Idx_t my_assgn, Idx_t* assgn) {
+	if (cluster < 0) {
+	    assgn[-(cluster+1)] = my_assgn;
+	} else {
+	    assign_observation(merge, merge[2*(cluster-1)], my_assgn, assgn);
+	    assign_observation(merge, merge[2*(cluster-1)+1], my_assgn, assgn);
+	}
+    }
+
+} // anonymous namespace
+
+
+extern "C" {
+
+    SEXP 
+    FSPD_cluster(SEXP tbl, SEXP k) {
+	// tbl is column major order, transposed to be row major
+	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
+	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
+	size_t k_l = static_cast<size_t>(asInteger(k));
+
+	SEXP ans, names, merge, assgn; int n_protected = 0;
+	
+	// Cluster observations
+	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1)); n_protected++;
+	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
+
+	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);
+
+
+	// Assigning observations to clusters	
+	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
+	
+	std::set<Idx_t> clusters;
+	live_clusters(merge_l, obs, k_l, clusters);  // Cut tree to find ~k clusters
+	
+	Idx_t cluster_index = 1; 
+	for (std::set<Idx_t>::iterator i=clusters.begin(),e=clusters.end(); i!=e; ++i)
+	    assign_observation(merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));
+	   
+
+	// Assemble return object
+	PROTECT(ans = allocVector(VECSXP,2)); n_protected++;
+	PROTECT(names = allocVector(STRSXP,2)); n_protected++;
+
+	SET_VECTOR_ELT(ans, 0, merge);
+	SET_STRING_ELT(names, 0, mkChar("merge"));
+	SET_VECTOR_ELT(ans, 1, assgn);
+	SET_STRING_ELT(names, 1, mkChar("assgn"));
+
+	setAttrib(ans, R_NamesSymbol, names);
+	UNPROTECT(n_protected);
+
+
+	return ans;
     }
 
 }

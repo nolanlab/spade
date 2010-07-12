@@ -1,0 +1,2 @@
+PKG_CXXFLAGS=-fopenmp @DEFS@
+PKG_LIBS=-lgomp
