@@ -1,5 +1,9 @@
 # Cluster observations into ~k clusters
 FlowSPD.cluster <- function(tbl, k) {
+    if (nrow(tbl) > 50000) {
+	warning("Potentially too many observations for the clustering step",immediate=TRUE);
+    }
+
     # Transpose table before call into row major order
     clust <- .Call("FSPD_cluster",t(tbl),as.integer(k))
     
@@ -21,26 +25,41 @@ FlowSPD.writeGraph <- function(graph, outfilename) {
      write.graph(graph, outfilename, format="gml")
 }
 
-FlowSPD.FCSToTree <- function(infilename, graphfilename, clusterfilename, cols=NULL, k=2, arcsinh_cofactor=5.0) {
-    # Load in FCS file
-    in_fcs  <- read.FCS(infilename);
-    in_data <- exprs(in_fcs);
+FlowSPD.FCSToTree <- function(infilenames, graphfilename, clusterfilename, 
+    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=40000) {
+    
+    data = c()
+    for (f in infilenames) {
+	# Load in FCS file
+	in_fcs  <- read.FCS(f);
+	in_data <- exprs(in_fcs);
 
-    params <- parameters(in_fcs);
-    pd     <- pData(params);
+	params <- parameters(in_fcs);
+	pd     <- pData(params);
 
-    # Select out the desired columns
-    idxs <- c();
-    if (!is.null(cols)) {
-	for (cl in cols) {
-	    idxs <- c(idxs,which(pd$desc == cl,arr.ind<-TRUE));
+	# Select out the desired columns
+	if (is.null(cols)) { 
+	    cols = as.vector(pd$desc) 
 	}
-    } else {
-	idxs <- c(1:nrow(pd));
-    }  
+	idxs <- match(cols,pd$desc)
+	if (any(is.na(idxs))) { 
+	    stop("Invalid column specifier") 
+	}
+	
+	data <- rbind(data,in_data[,idxs])
+	colnames(data) <- pd$desc[idxs]
+    }
 
-    centers <- FlowSPD.cluster(asinh(in_data[,idxs]/arcsinh_cofactor),k);
+    # Downsample data if neccessary 
+    if (nrow(data) > desired_samples) {
+	data <- data[sample(1:nrow(data),desired_samples),]
+    }
+
+    # Compute the cluster centers
+    centers <- FlowSPD.cluster(asinh(data/arcsinh_cofactor),k);
+    
+    # Write out the MST and cluster centers to specified files
     FlowSPD.writeGraph(FlowSPD.clustersToMST(centers),graphfilename);
-    write.table(centers,file=clusterfilename,row.names=FALSE,col.names=pd$desc[idxs])
+    write.table(centers,file=clusterfilename,row.names=FALSE,col.names=colnames(data))
 }
  
