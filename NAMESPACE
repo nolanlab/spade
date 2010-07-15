@@ -4,5 +4,7 @@ export(
     "FlowSPD.addDensityToFCS",
     "FlowSPD.downsampleFCS",
     "FlowSPD.cluster",
-    "FlowSPD.FCSToTree"
+    "FlowSPD.FCSToTree",
+    "FlowSPD.assignToCluster",
+    "FlowSPD.addClusterToFCS"
 )

@@ -3,8 +3,8 @@ FlowSPD.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=20
     .Call("FSPD_density",t(tbl),kernel_mult,apprx_mult,med_samples)
 
 FlowSPD.addDensityToFCS <- function(infilename, outfilename, 
-    cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000)
-{
+    cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000) {
+
     # Load in FCS file
     in_fcs  <- read.FCS(infilename);
     in_data <- exprs(in_fcs);
@@ -71,7 +71,7 @@ FlowSPD.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, 
     }
     
     # boundary[1]: exclusion, boundary[2]: potential target
-    boundary <- quantile(in_data[,d_idx],c(target_pctile),names=FALSE)
+    boundary <- quantile(in_data[,d_idx],c(exclude_pctile,exclude_pctile+target_pctile),names=FALSE)
     
     out_data <- subset(in_data, in_data[,d_idx] > boundary[1]) # Exclusion    
 
