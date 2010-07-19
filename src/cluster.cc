@@ -22,11 +22,10 @@
 namespace {
 
     typedef double Data_t;
-    typedef float  Dist_t;
+    typedef double Dist_t;
     typedef int    Idx_t;
    
-    typedef std::vector<bool> BV_t;
-
+ 
     Dist_t 
     distance(const Data_t* a, const Data_t* b, size_t dim) {
 	Dist_t d_l = 0.;
@@ -34,6 +33,8 @@ namespace {
 	    d_l += fabs(a[i]-b[i]);
 	return d_l;
     }
+
+    typedef std::vector<bool> BV_t;
 
     // Assumes no diagonal entries ...
     size_t tri_idx(size_t r, size_t c, size_t n) { 
@@ -170,6 +171,7 @@ END_ROUND:;
 	Free(pair);
     }
 
+
     void
     live_clusters(const Idx_t* merge, size_t obs, size_t k, std::set<Idx_t>& clusters) { 
 	clusters.insert((Idx_t)obs-1); // Initialize with "final" cluster
@@ -178,7 +180,7 @@ END_ROUND:;
 		break;
 	    clusters.erase((Idx_t)(i+1)); // Recall cluster Ids of 1-indexed
 	    clusters.insert(merge[2*i]);
-	    clusters.insert(merge[2*i+1]);
+	    clusters.insert(merge[2*i+1]); 
 	}
     }
 
@@ -190,6 +192,81 @@ END_ROUND:;
 	    assign_observation(merge, merge[2*(cluster-1)], my_assgn, assgn);
 	    assign_observation(merge, merge[2*(cluster-1)+1], my_assgn, assgn);
 	}
+    }
+
+    struct Merge_t {
+	Idx_t from, into;
+    };
+    struct MergeCMP {
+	const Dist_t*  height;
+	MergeCMP(const Dist_t* height_a) : height(height_a) {}
+	bool operator()(const Merge_t& a, const Merge_t& b) const {
+	    return height[a.from] < height[b.from];
+	}
+    };
+    
+
+    void
+    slink(const Data_t* data, size_t obs, size_t dim, Merge_t* merge) {
+	Idx_t*  P = Calloc(obs, Idx_t);
+	Dist_t* L = Calloc(obs, Dist_t);
+	Dist_t* M = Calloc(obs, Dist_t);
+
+	// Compute the pointer representation
+	for (size_t i=0; i<obs; i++) {
+
+	    // Step 1: Initialize
+	    P[i] = i;
+	    L[i] = std::numeric_limits<Dist_t>::max();
+
+	    // Step 2: Build out pairwise distances from objects in pointer
+	    // represenation to the new object
+	    const Data_t* pt = &data[i*dim];
+	    #pragma omp parallel for shared(pt, M)
+	    for (size_t j=0; j<i; j++) {
+		M[j] = distance(pt, &data[j*dim], dim);
+	    }
+
+	    // Step 3: Update M, P, L
+	    for (size_t j=0; j<i; j++) {
+		Dist_t l = L[j], m = M[j];
+		if (l >= m) {
+		    M[P[j]] = std::min(M[P[j]], l);
+		    L[j]    = m;
+		    P[j]    = i;
+		} else {
+		    M[P[j]] = std::min(M[P[j]], m);
+		}
+	    }
+    
+	    // Step 4: Actualize the clusters
+	    for (size_t j=0; j<i; j++) {
+		if (L[j] >= L[P[j]])
+		    P[j] = i;
+	    }
+
+	}
+
+	// Convert the pointer representation to dendogram 
+	for (size_t i=0; i<(obs-1); i++) {
+	    merge[i].from = i;
+	    merge[i].into = P[i];
+	}
+	std::sort((Merge_t*)merge, (Merge_t*)merge + obs-1, MergeCMP(L)); 
+	for (size_t i=0; i<obs; i++) {
+	    P[i] = -(Idx_t)(i+1); // R is 1-indexed
+	}
+	for (size_t i=0; i<(obs-1); i++) {
+	    Idx_t into = merge[i].into;
+	    merge[i].from = P[merge[i].from];
+	    merge[i].into = P[merge[i].into];
+	    P[into] = i+1;
+	}
+
+
+	Free(M);
+	Free(L);
+	Free(P);
     }
 
 } // anonymous namespace
@@ -209,9 +286,9 @@ extern "C" {
 	// Cluster observations
 	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1)); n_protected++;
 	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
-
-	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);
-
+	
+	slink(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
+	//cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);
 
 	// Assigning observations to clusters	
 	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
