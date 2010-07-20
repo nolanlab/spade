@@ -9,7 +9,11 @@ FlowSPD.cluster <- function(tbl, k) {
     
     centers = c()
     for (i in c(1:max(clust$assgn))) {
-	centers = rbind(centers,colMeans(tbl[clust$assgn == i,]))
+	obs <- tbl[clust$assgn == i,]
+	# Only keep clusters with more than one observation
+	if (is.matrix(obs) && nrow(obs) > 1) {
+	    centers = rbind(centers,colMeans(obs))
+	}
     }
     centers
 }
