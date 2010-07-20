@@ -196,6 +196,7 @@ END_ROUND:;
 
     struct Merge_t {
 	Idx_t from, into;
+	void set(Idx_t f, Idx_t i) { from = f; into = i; } 
     };
     struct MergeCMP {
 	const Dist_t*  height;
@@ -208,12 +209,19 @@ END_ROUND:;
 
     void
     slink(const Data_t* data, size_t obs, size_t dim, Merge_t* merge) {
-	Idx_t*  P = Calloc(obs, Idx_t);
-	Dist_t* L = Calloc(obs, Dist_t);
-	Dist_t* M = Calloc(obs, Dist_t);
+	R::auto_ptr<Idx_t>  P_ap(Calloc(obs, Idx_t));
+	R::auto_ptr<Dist_t> L_ap(Calloc(obs, Dist_t));
+	R::auto_ptr<Dist_t> M_ap(Calloc(obs, Dist_t));
+
+	Idx_t*  P = P_ap.get();
+	Dist_t* L = L_ap.get();
+	Dist_t* M = M_ap.get();
 
 	// Compute the pointer representation
 	for (size_t i=0; i<obs; i++) {
+
+	    // Steps corresponding to Sibson's 1972 paper "SLINK: An optimally
+	    // efficient algorithmf or the single-link cluster method"
 
 	    // Step 1: Initialize
 	    P[i] = i;
@@ -249,8 +257,7 @@ END_ROUND:;
 
 	// Convert the pointer representation to dendogram 
 	for (size_t i=0; i<(obs-1); i++) {
-	    merge[i].from = i;
-	    merge[i].into = P[i];
+	    merge[i].set(i, P[i]);
 	}
 	std::sort((Merge_t*)merge, (Merge_t*)merge + obs-1, MergeCMP(L)); 
 	for (size_t i=0; i<obs; i++) {
@@ -258,16 +265,47 @@ END_ROUND:;
 	}
 	for (size_t i=0; i<(obs-1); i++) {
 	    Idx_t into = merge[i].into;
-	    merge[i].from = P[merge[i].from];
-	    merge[i].into = P[merge[i].into];
+	    merge[i].set(P[merge[i].from],  P[merge[i].into]);
 	    P[into] = i+1;
 	}
-
-
-	Free(M);
-	Free(L);
-	Free(P);
     }
+
+    void
+    flatten_tree(Merge_t* slink, size_t obs) {
+	Idx_t cur_idx = 0;
+	
+	std::vector<Idx_t> live_clusters; 
+	live_clusters.reserve(2*obs); // Need to pre-allocate enough to prevent reallocation
+	
+	// Initialize live clusters with "single observation" clusters in
+	// single-linkage sorted order
+	{
+	    Idx_t *part_beg = (Idx_t*)slink, 
+		  *part_end = std::stable_partition((Idx_t*)slink, (Idx_t*)slink + 2*(obs-1), std::bind2nd(std::less<Idx_t>(),0));
+	    live_clusters.insert(live_clusters.end(), part_beg, part_end);
+	}
+
+	// Merge clusters
+	while (live_clusters.size() > 1) {	    
+	    size_t num_live = live_clusters.size(), fold = std::max((size_t)1 /* fold 2x*/, num_live / 5000);	    
+	    Idx_t *part_beg = &live_clusters[0], 
+		  *part_end = part_beg + num_live; 
+	    
+	    // Merge clusters while at least two remaining in this round
+	    while ((part_beg+1) < part_end) {
+		slink[cur_idx++].set(*(part_beg++), *(part_beg++)); // Merge initial pair
+		for (size_t i=1; i < fold && part_beg < part_end; i++) {
+		    slink[cur_idx].set(*(part_beg++), cur_idx);  // Merge next nearest cluster until "fold" is reached
+		    ++cur_idx;
+		}
+		live_clusters.push_back(cur_idx); // Only last formed cluster remains live
+	    }
+	    live_clusters.insert(live_clusters.end(), part_beg, part_end); // Re-insert any leftover clusters
+	    live_clusters.erase(live_clusters.begin(), live_clusters.begin()+num_live);
+	}
+
+    }
+
 
 } // anonymous namespace
 
@@ -281,6 +319,8 @@ extern "C" {
 	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
 	size_t k_l = static_cast<size_t>(asInteger(k));
 
+	assert(sizeof(Merge_t) == 2*sizeof(Idx_t));
+
 	SEXP ans, names, merge, assgn; int n_protected = 0;
 	
 	// Cluster observations
@@ -288,18 +328,19 @@ extern "C" {
 	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
 	
 	slink(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
-	//cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);
+	flatten_tree((Merge_t*)merge_l, obs);
+	
 
 	// Assigning observations to clusters	
 	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
-	
+
 	std::set<Idx_t> clusters;
 	live_clusters(merge_l, obs, k_l, clusters);  // Cut tree to find ~k clusters
 	
 	Idx_t cluster_index = 1; 
 	for (std::set<Idx_t>::iterator i=clusters.begin(),e=clusters.end(); i!=e; ++i)
-	    assign_observation(merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));
-	   
+	    assign_observation(merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));	   
+
 
 	// Assemble return object
 	PROTECT(ans = allocVector(VECSXP,2)); n_protected++;

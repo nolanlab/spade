@@ -3,3 +3,5 @@ autom4te.cache
 config.log
 config.status
 src/Makevars
+*.o
+*.so
