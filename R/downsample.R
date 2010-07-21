@@ -14,7 +14,7 @@ FlowSPD.addDensityToFCS <- function(infilename, outfilename,
 
     # Select out the desired columns
     if (is.null(cols)) {
-	cols = as.vector(pd$desc) 
+	cols <- as.vector(pd$desc) 
     }
     idxs <- match(cols,pd$desc)
     if (any(is.na(idxs))) { 

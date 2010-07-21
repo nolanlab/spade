@@ -327,9 +327,9 @@ extern "C" {
 	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1)); n_protected++;
 	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
 	
-	slink(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
-	flatten_tree((Merge_t*)merge_l, obs);
-	
+	//slink(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
+	//flatten_tree((Merge_t*)merge_l, obs);
+	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);	
 
 	// Assigning observations to clusters	
 	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	

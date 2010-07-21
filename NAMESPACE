@@ -6,5 +6,6 @@ export(
     "FlowSPD.cluster",
     "FlowSPD.FCSToTree",
     "FlowSPD.assignToCluster",
-    "FlowSPD.addClusterToFCS"
+    "FlowSPD.addClusterToFCS",
+    "FlowSPD.annotateMarkers"
 )
