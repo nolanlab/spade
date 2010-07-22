@@ -213,6 +213,14 @@ namespace {
 	    }
 END_ROUND:;
 	}
+
+	// Clean up
+	for (ACluster *i=c_beg; i<c_end; i++) {
+	    if (i->get_valid()) {
+		i->set_valid(false);
+		i->destroy();
+	    }
+	}	    
     }
 
 
