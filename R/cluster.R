@@ -1,6 +1,6 @@
 # Cluster observations into ~k clusters
 FlowSPD.cluster <- function(tbl, k) {
-    if (nrow(tbl) > 50000) {
+    if (nrow(tbl) > 60000) {
 	warning("Potentially too many observations for the clustering step",immediate=TRUE);
     }
 
@@ -30,7 +30,7 @@ FlowSPD.writeGraph <- function(graph, outfilename) {
 }
 
 FlowSPD.FCSToTree <- function(infilenames, graphfilename, clusterfilename, 
-    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=40000) {
+    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000) {
     
     data = c()
     for (f in infilenames) {
