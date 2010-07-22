@@ -33,145 +33,7 @@ namespace {
 	    d_l += fabs(a[i]-b[i]);
 	return d_l;
     }
-
-    typedef std::vector<bool> BV_t;
-
-    // Assumes no diagonal entries ...
-    size_t tri_idx(size_t r, size_t c, size_t n) { 
-	return (r < c) ? (n-1)*r - r*(r-1)/2 + c-r-1 : (n-1)*c - c*(c-1)/2 + r-c-1; 
-    }
-
-    struct TriIdxFixedRow {
-	size_t r, n, p;
-	TriIdxFixedRow(size_t r_a, size_t n_a) : r(r_a), n(n_a) { p = (n-1)*r - r*(r-1)/2 - r - 1; }
-	inline size_t tri_idx(size_t c) const { return (r < c) ? p + c : (n-1)*c - c*(c-1)/2 + r-c-1; }
-    };
-
-
-    void
-    pairwise_distances(const Data_t *data, size_t dim, size_t obs, Dist_t *dist) {
-	#pragma omp parallel for shared(data)
-	for (size_t i=0; i<obs; i++) {
-	    const Data_t *point = &data[i*dim];
-	    size_t t = tri_idx(i,i+1,obs);
-	    for (size_t j=i+1; j<obs; j++) {
-		dist[t++] = distance(point, &data[j*dim], dim);
-	    }
-	}
-    }
  
-    struct LT {
-	const Dist_t  *pair;
-	size_t         obs; 
-	size_t         idx;
-	const BV_t&    merged;
-	
-	const TriIdxFixedRow ti;
-	
-	LT(const Dist_t* pair_a, size_t obs_a, size_t idx_a, const BV_t& merged_a) : 
-	    pair(pair_a), obs(obs_a), idx(idx_a), merged(merged_a), ti(idx, obs) {}
-	
-	bool operator()(size_t l, size_t r) const {
-	    if      (l == idx)  return false;
-	    else if (r == idx)  return true;
-	    else if (merged[l]) return false;
-	    else if (merged[r]) return true;
-	    else {
-		return pair[ti.tri_idx(l)] < pair[ti.tri_idx(r)];
-	    }
-	}
-    }; 
-
-    void
-    possible_merges(const Dist_t *pair, size_t obs, size_t fold, const BV_t& merged, 
-		    size_t idx, size_t* idxs_begin, size_t* idxs_end) {
-	LT lt(pair, obs, idx, merged);
-	PARALLEL_NAMESPACE::partial_sort(idxs_begin, idxs_begin+fold, idxs_end, lt);   
-    }
-
-    void
-    single_linkage(Dist_t *pair, size_t obs, size_t into, size_t from) {	
-	TriIdxFixedRow tii(into,obs), tif(from,obs);
-	#pragma omp parallel for shared(pair, tii, tif)
-	for (size_t i=0; i<obs; i++) {
-	    if (i == into || i == from)
-		continue;
-	    size_t into_t = tii.tri_idx(i), from_t = tif.tri_idx(i);
-	    pair[into_t] = std::min(pair[into_t], pair[from_t]);
-	    pair[from_t] = std::numeric_limits<Dist_t>::max();
-	}
-    }
-
-    struct TF {
-	typedef const size_t argument_type;
-	typedef bool         result_type;
-
-	const std::vector<bool>& pred;
-	
-	TF(const std::vector<bool>& pred_a) : pred(pred_a) {}
-	bool operator()(const size_t a) const { return pred[a]; }
-    };
-
-    void
-    cluster(const Data_t* data, size_t obs, size_t dim, Idx_t* merge) {   
-	Dist_t *pair = Calloc(obs*(obs-1)/2,Dist_t); // Declare a triangular matrix for pairwise distances
-	pairwise_distances(data, dim, obs, pair); 
-
-	std::vector<bool> valid(obs, true), merged(obs, false);
-	size_t *idxs = Calloc(obs,size_t); for (size_t i=0; i<obs; i++) { idxs[i] = i; }
-	Idx_t  *clst = Calloc(obs,Idx_t);  for (Idx_t i=0;  i<obs; i++) { clst[i] = -i-1; }
-
-	size_t merge_idx = 0, merge_round = 0;
-
-	TF tf_v(valid), tf_m(merged);
-
-	size_t *idxs_end = idxs + obs; // End of valid indices
-	while (merge_idx < (obs-1)) {
-
-	    Rprintf("Merging round %zu ...\n", merge_round++);
-
-	    // Prepare for a round of merging
-	    idxs_end = std::partition(idxs, idxs_end, tf_v);	// Resest range of valid indices 	    
-	    std::random_shuffle(idxs, idxs_end);		// Randomize order of cluster assembly	    
-	    std::fill(merged.begin(), merged.end(), false);	// Reset merge tracking
-    	    
-	    size_t fold = std::max((size_t)1 /* fold 2x*/, (size_t)(idxs_end-idxs)/5000);
-
-	    while (true) {
-
-		// Find first un-merged cluster 
-		size_t *into_p = PARALLEL_NAMESPACE::find_if(idxs, idxs_end, std::not1(tf_m));
-		if (into_p == idxs_end)
-		    goto END_ROUND;
-		size_t into = *into_p;
-
-		merged[into] = true; // Mark as merged in this round
-
-		// Find other clusters that could be merged...
-		possible_merges(pair, obs, fold, merged, into, idxs, idxs_end);	
-
-		for (size_t i=0; i<fold; i++) {
-		    size_t from = idxs[i];
-		    if (!valid[from] || merged[from]) 
-			goto END_ROUND;  // We have exhausted possible merges in this round
-
-		    merged[from] = true; valid[from] = false; // Removed from further consideration
-		    single_linkage(pair, obs, into, from);    // Update distances	
-
-		    // Update history of cluster merges
-		    merge[merge_idx*2] = clst[into]; merge[merge_idx*2+1] = clst[from];
-		    clst[into] = merge_idx++ + 1;
-		}
-	    }
-END_ROUND:;
-	}	
-
-	Free(idxs);
-	Free(clst); 
-	Free(pair);
-    }
-
-
     void
     live_clusters(const Idx_t* merge, size_t obs, size_t k, std::set<Idx_t>& clusters) { 
 	clusters.insert((Idx_t)obs-1); // Initialize with "final" cluster
@@ -198,6 +60,7 @@ END_ROUND:;
 	Idx_t from, into;
 	void set(Idx_t f, Idx_t i) { from = f; into = i; } 
     };
+    
     struct MergeCMP {
 	const Dist_t*  height;
 	MergeCMP(const Dist_t* height_a) : height(height_a) {}
@@ -206,104 +69,150 @@ END_ROUND:;
 	}
     };
     
+    /* Maintain state for a single cluster
+     */
+    class ACluster {
+    public:
+	static size_t dim;
+	static void init_global(size_t d) { dim = d; }
 
-    void
-    slink(const Data_t* data, size_t obs, size_t dim, Merge_t* merge) {
-	R::auto_ptr<Idx_t>  P_ap(Calloc(obs, Idx_t));
-	R::auto_ptr<Dist_t> L_ap(Calloc(obs, Dist_t));
-	R::auto_ptr<Dist_t> M_ap(Calloc(obs, Dist_t));
+    public:
+	Data_t* center;		// My cluster center
+	bool valid;		// Cluster statuses
+	bool merged;
+	Idx_t cluster_id;	// Current ID in merging data structure
+	const Data_t **members;	// Observations in my cluster
+       	size_t num_members;
 
-	Idx_t*  P = P_ap.get();
-	Dist_t* L = L_ap.get();
-	Dist_t* M = M_ap.get();
 
-	// Compute the pointer representation
-	for (size_t i=0; i<obs; i++) {
+	// Satisfied with compiler generated constructors
 
-	    // Steps corresponding to Sibson's 1972 paper "SLINK: An optimally
-	    // efficient algorithmf or the single-link cluster method"
+	// Initialization and destruction
+	void init_RM(size_t idx, const Data_t* data) {
+	    center = Calloc(dim, Data_t);
+	    memcpy(center, &data[idx*dim], dim*sizeof(Data_t));
 
-	    // Step 1: Initialize
-	    P[i] = i;
-	    L[i] = std::numeric_limits<Dist_t>::max();
+	    valid = true; merged = false;
+	    cluster_id = -(Idx_t)(idx+1);  // Recall R is 1-indexed
 
-	    // Step 2: Build out pairwise distances from objects in pointer
-	    // represenation to the new object
-	    const Data_t* pt = &data[i*dim];
-	    #pragma omp parallel for shared(pt, M)
-	    for (size_t j=0; j<i; j++) {
-		M[j] = distance(pt, &data[j*dim], dim);
-	    }
-
-	    // Step 3: Update M, P, L
-	    for (size_t j=0; j<i; j++) {
-		Dist_t l = L[j], m = M[j];
-		if (l >= m) {
-		    M[P[j]] = std::min(M[P[j]], l);
-		    L[j]    = m;
-		    P[j]    = i;
-		} else {
-		    M[P[j]] = std::min(M[P[j]], m);
-		}
-	    }
-    
-	    // Step 4: Actualize the clusters
-	    for (size_t j=0; j<i; j++) {
-		if (L[j] >= L[P[j]])
-		    P[j] = i;
-	    }
-
+	    members = Calloc(1, const Data_t*);
+	    members[0]  = &data[idx*dim];
+	    num_members = 1;
+	}
+	void destroy() {
+	    assert(!valid);
+	    center  = (Free(center), (Data_t*)0);
+	    members = (Free(members), (const Data_t**)0);
+	    num_members = 0;
 	}
 
-	// Convert the pointer representation to dendogram 
-	for (size_t i=0; i<(obs-1); i++) {
-	    merge[i].set(i, P[i]);
-	}
-	std::sort((Merge_t*)merge, (Merge_t*)merge + obs-1, MergeCMP(L)); 
-	for (size_t i=0; i<obs; i++) {
-	    P[i] = -(Idx_t)(i+1); // R is 1-indexed
-	}
-	for (size_t i=0; i<(obs-1); i++) {
-	    Idx_t into = merge[i].into;
-	    merge[i].set(P[merge[i].from],  P[merge[i].into]);
-	    P[into] = i+1;
-	}
-    }
-
-    void
-    flatten_tree(Merge_t* slink, size_t obs) {
-	Idx_t cur_idx = 0;
+	// Getters & Setters (many used in STL algorithms)
+	bool get_valid() const { return valid; }
+	void set_valid(bool v) { valid = v; }
 	
-	std::vector<Idx_t> live_clusters; 
-	live_clusters.reserve(2*obs); // Need to pre-allocate enough to prevent reallocation
+	bool get_merged() const { return merged; }
+	void set_merged(bool m) { merged = m; }
+
+	Idx_t get_cluster_id() const { return cluster_id; }
+	void set_cluster_id(Idx_t i) { cluster_id = i; }	
+
+	// Helper structs
 	
-	// Initialize live clusters with "single observation" clusters in
-	// single-linkage sorted order
-	{
-	    Idx_t *part_beg = (Idx_t*)slink, 
-		  *part_end = std::stable_partition((Idx_t*)slink, (Idx_t*)slink + 2*(obs-1), std::bind2nd(std::less<Idx_t>(),0));
-	    live_clusters.insert(live_clusters.end(), part_beg, part_end);
+	// LessThan by data column (used in Median)
+	struct ColLT_RM {
+	    size_t col;
+	    ColLT_RM(size_t c) : col(c) {}
+	    bool operator()(const Data_t* l, const Data_t* r) { return l[col] < r[col]; }
+	};
+
+	Dist_t slink_distance(const ACluster& a) const {
+	    Dist_t d = std::numeric_limits<Dist_t>::max();
+	    for (size_t i=0; i<a.num_members; i++)
+		d = std::min(d, distance(center, a.members[i], dim));
+	    return d;
 	}
 
-	// Merge clusters
-	while (live_clusters.size() > 1) {	    
-	    size_t num_live = live_clusters.size(), fold = std::max((size_t)1 /* fold 2x*/, num_live / 5000);	    
-	    Idx_t *part_beg = &live_clusters[0], 
-		  *part_end = part_beg + num_live; 
+	// LessThan by "single" link distance between my center and other cluster's members
+	struct SLinkLT_RM {
+	    const ACluster& base;
+	    SLinkLT_RM(const ACluster& b) : base(b) {}
+	    bool operator()(const ACluster& l, const ACluster& r) const {
+		if      (l.merged) return false;
+		else if (r.merged) return true;
+		else return base.slink_distance(l) < base.slink_distance(r);
+    	    }
+	};
+
+	// Reset cluster, including updating cluster center
+	void reset_RM() {
+	    merged = false;  // Reset merged for next round
+	    for (size_t i=0; i<dim; i++) { // Update the cluster center as median of members
+		ColLT_RM lt(i);
+		std::nth_element(members, members + num_members/2, members + num_members, lt);
+		center[i] = members[num_members/2][i];
+	    }
+	}
+
+	// Merge in other cluster
+	void merge_in(ACluster& rhs) {
+	    rhs.merged = true; rhs.valid = false;
+
+	    members = Realloc(members, num_members+rhs.num_members, const Data_t*);
+	    memcpy(members+num_members, rhs.members, rhs.num_members*sizeof(Data_t*));
+	    num_members += rhs.num_members;
 	    
-	    // Merge clusters while at least two remaining in this round
-	    while ((part_beg+1) < part_end) {
-		slink[cur_idx++].set(*(part_beg++), *(part_beg++)); // Merge initial pair
-		for (size_t i=1; i < fold && part_beg < part_end; i++) {
-		    slink[cur_idx].set(*(part_beg++), cur_idx);  // Merge next nearest cluster until "fold" is reached
-		    ++cur_idx;
-		}
-		live_clusters.push_back(cur_idx); // Only last formed cluster remains live
-	    }
-	    live_clusters.insert(live_clusters.end(), part_beg, part_end); // Re-insert any leftover clusters
-	    live_clusters.erase(live_clusters.begin(), live_clusters.begin()+num_live);
+	    rhs.destroy();    
 	}
 
+    };
+
+    size_t ACluster::dim;
+
+    void
+    cluster(const Data_t* data, size_t obs, size_t dim, Merge_t* merge) {
+	ACluster::init_global(dim);
+	
+	Idx_t cur_merge = 0;  // Track current merge step
+
+	R::auto_ptr<ACluster> c_ap(Calloc(obs, ACluster));
+	ACluster *c_beg = c_ap.get(), *c_end = c_beg + obs;
+	for (size_t i=0; i<obs; i++)  // Initialize clusters for row major data
+	    c_beg[i].init_RM(i, data);
+	
+	while (cur_merge < (obs-1)) {
+	    // Only looking at "valid" clusters
+	    c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
+	    std::random_shuffle(c_beg, c_end);
+	    
+	    for (ACluster *i=c_beg; i<c_end; i++) // Reset for current merging round
+		i->reset_RM();	
+
+	    size_t fold = std::max((size_t)1 /* 2x */, (size_t)(c_end - c_beg) / 5000);
+	    while (true) {
+		// Find first valid, un-merged cluster in this round
+		ACluster* into = std::find_if(c_beg, c_end, std::not1(std::mem_fun_ref(&ACluster::get_merged)));
+		if (into == c_end)
+		    goto END_ROUND;		
+
+		into->set_merged(true);
+
+		// Find the "fold" nearest other clusters for row major data
+		ACluster::SLinkLT_RM cmp(*into);
+		std::partial_sort(into+1, std::min(into+1+fold,c_end), c_end, cmp);
+
+		for (size_t i=1; i<=fold && (into+i)<c_end; i++) {
+		    if (!into[i].get_valid() || into[i].get_merged())
+			goto END_ROUND;
+
+		    into->merge_in(into[i]);
+
+		    // Record merging operation
+		    merge[cur_merge].set(into->get_cluster_id(), into[i].get_cluster_id());
+		    into->set_cluster_id(++cur_merge); // Recall merging is 1-indexed
+		}
+	    }
+END_ROUND:;
+	}
     }
 
 
@@ -326,20 +235,19 @@ extern "C" {
 	// Cluster observations
 	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1)); n_protected++;
 	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
-	
-	//slink(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
-	//flatten_tree((Merge_t*)merge_l, obs);
-	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, merge_l);	
+
+	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
+		
 
 	// Assigning observations to clusters	
 	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
 
 	std::set<Idx_t> clusters;
-	live_clusters(merge_l, obs, k_l, clusters);  // Cut tree to find ~k clusters
+	live_clusters((Idx_t*)merge_l, obs, k_l, clusters);  // Cut tree to find ~k clusters
 	
 	Idx_t cluster_index = 1; 
 	for (std::set<Idx_t>::iterator i=clusters.begin(),e=clusters.end(); i!=e; ++i)
-	    assign_observation(merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));	   
+	    assign_observation((Idx_t*)merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));	   
 
 
 	// Assemble return object
