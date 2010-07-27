@@ -8,5 +8,6 @@ export(
     "FlowSPD.assignToCluster",
     "FlowSPD.addClusterToFCS",
     "FlowSPD.annotateMarkers",
-    "FlowSPD.layout.arch"
+    "FlowSPD.layout.arch",
+    "FlowSPD.layout.layout_arch"
 )

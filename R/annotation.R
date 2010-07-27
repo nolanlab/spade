@@ -51,15 +51,8 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     if (!is.connected(mst_graph)) {	
 	stop("Cannot handle graph that has disjoint components")
     }
-	
-    # get number of nodes, and binary adjacency matrix
-    num_nodes <- vcount(mst_graph);
-    tmp <- get.adjacency(mst_graph) + t(get.adjacency(mst_graph)); 
-    diag(tmp) <- 0;
-    adj <-  array(as.double(tmp!=0), c(num_nodes,num_nodes));
-
-	
-    # make sure it is a tree, no circles
+		
+    # Make sure it is a tree, no circles
     if (girth(mst_graph)$girth > 0) {
 	stop("Cannot handle graphs with cycles");
     }
@@ -69,30 +62,16 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     for (v in V(mst_graph)) {
 	hops <- rbind(hops,unlist(lapply(get.shortest.paths(mst_graph,v),length))-1)
     }
-    shortest_hop <- hops
 
+
+    # Compute the positions for each vertices
+    # --------------------------------------------------------------------------
+    v_pos <- array(0,c(num_nodes,2))
 
     # The longest path is the backbone arch
     terminals <- which(hops == max(hops), arr.ind=TRUE)[1,] - 1  # igraph vertices are 0-indexed
     back_bone <- unlist(get.shortest.paths(mst_graph, from=terminals["row"], to=terminals["col"]))
-
-    side <- vector("list",vcount(mst_graph))
-    for (v in back_bone) {
-	n <- setdiff(neighbors(mst_graph, v), back_bone)
-	if (length(n) > 0) {
-	    # Delete edges between the backbone and potential side chains, then find all
-	    # vertices reachable from those side chains.
-	    # Note: E(mst_graph,P=c(mapply(c,v,n))) == E(mst_graph)[v %--% n] but is much faster
-	    sub_graph <- delete.edges(mst_graph,E(mst_graph,P=c(mapply(c,v,n))))
-	    for (s in n) {
-	    	side[[v]] <- c(side[[v]],list(subcomponent(sub_graph,s)))
-	    }
-	}
-     }
-
-    # Compute the positions for each vertices
-    v_pos <- array(0,c(num_nodes,2))
-    
+      
     # Layout the backbone arch along an arc
     bb_span <- pi * .55 
     angles  <- seq(pi/2-bb_span/2, pi/2+bb_span/2, length.out=length(back_bone)) 
@@ -116,12 +95,13 @@ FlowSPD.layout.arch <-  function(mst_graph) {
 	    side_g <- delete.edges(side_g,subset(E(side_g),side_h[e[,1]] > side_h[e[,2]]))	   
 
 	    # Layout side chain
+	    # -----------------------------------------------------------------
 	    root <- which.min(side_h)-1
 	    layout <- layout.reingold.tilford(side_g,root=root)
 	   
 	    # rotate tree to be normal to back bone
 	    polar <- cbind(atan2(layout[,2],layout[,1]), sqrt(rowSums(layout^2)))
-	    polar[,1] <- polar[,1] + angles[back_bone==v]-pi/2
+	    polar[,1] <- polar[,1] + angles[back_bone==v] - pi/2
 	    layout <- polar[,2]*cbind(cos(polar[,1]),-sin(polar[,1]))	    
  
 	    # translate layout to back_bone 	    
@@ -129,6 +109,7 @@ FlowSPD.layout.arch <-  function(mst_graph) {
 	    v_pos[side_v+1,] <- layout
 	}
     }
+    v_pos
 }
 
 FlowSPD.layout.arch_layout <- function(mst_graph)  
