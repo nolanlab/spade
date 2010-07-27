@@ -44,7 +44,94 @@ FlowSPD.annotateMarkers <- function(infilename, cols=NULL, arcsinh_cofactor=5.0)
     list(counts=counts, medians=medians)
 }
 
-FlowSPD.layout.arch <-  function(mst_graph)  
+FlowSPD.layout.arch <-  function(mst_graph) {
+    if (!is.igraph(mst_graph)) {
+	stop("Input has to be igraph object")
+    }
+    if (!is.connected(mst_graph)) {	
+	stop("Cannot handle graph that has disjoint components")
+    }
+	
+    # get number of nodes, and binary adjacency matrix
+    num_nodes <- vcount(mst_graph);
+    tmp <- get.adjacency(mst_graph) + t(get.adjacency(mst_graph)); 
+    diag(tmp) <- 0;
+    adj <-  array(as.double(tmp!=0), c(num_nodes,num_nodes));
+
+	
+    # make sure it is a tree, no circles
+    if (girth(mst_graph)$girth > 0) {
+	stop("Cannot handle graphs with cycles");
+    }
+	
+    # Find the distance between nodes measured in "hops"
+    hops <- c()
+    for (v in V(mst_graph)) {
+	hops <- rbind(hops,unlist(lapply(get.shortest.paths(mst_graph,v),length))-1)
+    }
+    shortest_hop <- hops
+
+
+    # The longest path is the backbone arch
+    terminals <- which(hops == max(hops), arr.ind=TRUE)[1,] - 1  # igraph vertices are 0-indexed
+    back_bone <- unlist(get.shortest.paths(mst_graph, from=terminals["row"], to=terminals["col"]))
+
+    side <- vector("list",vcount(mst_graph))
+    for (v in back_bone) {
+	n <- setdiff(neighbors(mst_graph, v), back_bone)
+	if (length(n) > 0) {
+	    # Delete edges between the backbone and potential side chains, then find all
+	    # vertices reachable from those side chains.
+	    # Note: E(mst_graph,P=c(mapply(c,v,n))) == E(mst_graph)[v %--% n] but is much faster
+	    sub_graph <- delete.edges(mst_graph,E(mst_graph,P=c(mapply(c,v,n))))
+	    for (s in n) {
+	    	side[[v]] <- c(side[[v]],list(subcomponent(sub_graph,s)))
+	    }
+	}
+     }
+
+    # Compute the positions for each vertices
+    v_pos <- array(0,c(num_nodes,2))
+    
+    # Layout the backbone arch along an arc
+    bb_span <- pi * .55 
+    angles  <- seq(pi/2-bb_span/2, pi/2+bb_span/2, length.out=length(back_bone)) 
+    v_pos[back_bone+1,] <- length(back_bone)*cbind(cos(angles),-sin(angles))
+
+    # Layout the side chains as trees normal to the backbone
+    for (v in back_bone) {
+	# Find subset of vertices that compose side chain by deleting links between current
+	# backbone vertex and rest of the backbone and then performing subcomponent
+	# Note: E(mst_graph,P=c(mapply(c,v,n))) == E(mst_graph)[v %--% n] but is much faster
+	n <- intersect(neighbors(mst_graph, v), back_bone)
+	side_v <- sort(subcomponent(delete.edges(mst_graph,E(mst_graph,P=c(mapply(c,v,n)))),v))
+	
+	# Compute layout for side chains and integrate it into overall layout 
+	# Note: Relies on side_v being in sorted order
+	if (length(side_v) > 1) {
+	    # Convert side chains to directed graph, deleting edges with decreasing hop distance
+	    side_h <- hops[v+1,side_v+1]  # hops between back_bone node and side chain
+	    side_g <- as.directed(subgraph(mst_graph,side_v),mode="mutual")
+	    e <- get.edges(side_g,E(side_g))+1  # edges as a matrix, recall igraph is 0-indexed
+	    side_g <- delete.edges(side_g,subset(E(side_g),side_h[e[,1]] > side_h[e[,2]]))	   
+
+	    # Layout side chain
+	    root <- which.min(side_h)-1
+	    layout <- layout.reingold.tilford(side_g,root=root)
+	   
+	    # rotate tree to be normal to back bone
+	    polar <- cbind(atan2(layout[,2],layout[,1]), sqrt(rowSums(layout^2)))
+	    polar[,1] <- polar[,1] + angles[back_bone==v]-pi/2
+	    layout <- polar[,2]*cbind(cos(polar[,1]),-sin(polar[,1]))	    
+ 
+	    # translate layout to back_bone 	    
+	    layout <- layout + matrix(v_pos[v+1,] - layout[root+1,], nrow=nrow(layout), ncol=2, byrow=TRUE)
+	    v_pos[side_v+1,] <- layout
+	}
+    }
+}
+
+FlowSPD.layout.arch_layout <- function(mst_graph)  
 {
 	if (!is.igraph(mst_graph))
 	{
@@ -224,4 +311,5 @@ node_positions[2,] = node_positions[2,]/max(abs(node_positions[2,]))*50;
 
 t(node_positions)
 }
+
 
