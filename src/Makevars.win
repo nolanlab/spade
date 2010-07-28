@@ -1,2 +1,2 @@
 PKG_CXXFLAGS=-fopenmp 
-PKG_LIBS=-lgomp
+PKG_LIBS=-lgomp -lpthread
