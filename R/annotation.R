@@ -73,9 +73,10 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     back_bone <- unlist(get.shortest.paths(mst_graph, from=terminals["row"], to=terminals["col"]))
       
     # Layout the backbone arch along an arc
-    bb_span <- pi * .55 
+    bb_span <- pi * .55  # span in radians of back bone arch
+    bb_unit <- 50.0  # unit distance bewteen nodes
     angles  <- seq(pi/2-bb_span/2, pi/2+bb_span/2, length.out=length(back_bone)) 
-    v_pos[back_bone+1,] <- length(back_bone)*cbind(cos(angles),-sin(angles))
+    v_pos[back_bone+1,] <- bb_unit*length(back_bone)*cbind(cos(angles),-sin(angles))
 
     # Layout the side chains as trees normal to the backbone
     for (v in back_bone) {
@@ -102,7 +103,7 @@ FlowSPD.layout.arch <-  function(mst_graph) {
 	    # rotate tree to be normal to back bone
 	    polar <- cbind(atan2(layout[,2],layout[,1]), sqrt(rowSums(layout^2)))
 	    polar[,1] <- polar[,1] + angles[back_bone==v] - pi/2
-	    layout <- polar[,2]*cbind(cos(polar[,1]),-sin(polar[,1]))	    
+	    layout <- bb_unit*polar[,2]*cbind(cos(polar[,1]),-sin(polar[,1]))	    
  
 	    # translate layout to back_bone 	    
 	    layout <- layout + matrix(v_pos[v+1,] - layout[root+1,], nrow=nrow(layout), ncol=2, byrow=TRUE)
@@ -110,6 +111,87 @@ FlowSPD.layout.arch <-  function(mst_graph) {
 	}
     }
     v_pos
+}
+
+FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
+    if (!is.igraph(graph)) {
+	stop("Not a graph object")
+    }
+    
+    if (file == "")
+	file <- stdout()
+    else if (is.character(file)) {
+	file <- file(file, "w")
+	on.exit(close(file))
+    }
+    else if (!isOpen(file, "w")) {
+	open(file, "w")
+	on.exit(close(file))
+    }
+    if (!inherits(file, "connection")) {
+	stop("'file' must be a character string or a connection")
+    }
+
+    write.gml <- function(graph,file) {
+	
+	write.attr <- function(name, attr) {
+	    if (is.character(attr))
+		paste(name," \"",attr,"\"",sep="")
+	    else
+		paste(name,attr)
+	}
+	
+	writeLines(c("graph [", paste("directed",ifelse(is.directed(graph),1,0))),con=file)
+
+	# Identify known "structs"	
+	v_attr <- list.vertex.attributes(graph)
+	v_attr_g <- v_attr[grep("graphics[.]",v_attr)]  # graphics attributes
+	v_attr <- setdiff(v_attr, v_attr_g)
+	if (length(grep("[.]",v_attr)) > 0) {
+	    stop("Unsupported struct in vertex attributes")
+	}
+	
+	for (v in V(graph)) {
+	    writeLines("node [",con=file)
+	 
+	    for (a in v_attr) {
+		writeLines(write.attr(a,get.vertex.attribute(mst_graph,a,index=v)),con=file)
+	    } 	    
+
+	    writeLines("graphics [",con=file)
+	    for (a in v_attr_g) {
+		parts <- unlist(strsplit(a,"[.]"))
+		writeLines(write.attr(parts[2],get.vertex.attribute(mst_graph,a,index=v)),con=file)
+	    }
+	    writeLines("]",con=file)
+	      
+	    writeLines("]",con=file)
+	}
+	
+	# Identify known "structs"	
+	e_attr <- list.edge.attributes(graph)
+	if (length(grep("[.]",e_attr)) > 0) {
+	    stop("Unsupported struct in edge attributes")
+	}
+
+	for (e in E(graph)) {
+	    writeLines("edge [",con=file)
+	
+	    pts <- get.edges(graph,e)
+	    writeLines(c(paste("source",pts[1]), paste("target",pts[2])),con=file)
+	    for (a in e_attr) {
+		writeLines(paste(a,get.edge.attribute(mst_graph,a,index=e)),con=file)
+	    }	
+
+	    writeLines("]",con=file)	
+	}
+	writeLines("]",con=file)
+    }
+
+    res <- switch(format,   
+		gml = write.gml(graph,file), 
+		stop(paste("Unsupported output format:",format)))
+    invisible(res)			
 }
 
 FlowSPD.layout.arch_layout <- function(mst_graph)  
