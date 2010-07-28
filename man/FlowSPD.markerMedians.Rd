@@ -1,4 +1,5 @@
-\name{FlowSPD.annotateMarkers}
+\name{FlowSPD.markerMedians}
+\alias{FlowSPD.markerMedians}
 \alias{FlowSPD.annotateMarkers}
 \title{
 Compute marker medians and counts for clusters
@@ -7,6 +8,7 @@ Compute marker medians and counts for clusters
 Compute the marker medians and observations counts for cluster annoated FCS files.
 }
 \usage{
+FlowSPD.markerMedians(infilename, cols = NULL, arcsinh_cofactor = 5)
 FlowSPD.annotateMarkers(infilename, cols = NULL, arcsinh_cofactor = 5)
 }
 \arguments{
@@ -21,6 +23,7 @@ Cofactor used in the arcsinh transform \code{asinh(data/arcsinh_cofactor)} of da
 }
 }
 \details{
+FlowSPD.annotateMarkers is deprecated.
 }
 \value{
 List with:
@@ -35,6 +38,7 @@ Michael Linderman
 \note{
 }
 \seealso{
-\code{\link{FlowSPD.assignToCluster}}}
+\code{\link{FlowSPD.addClusterToFCS}}, \code{\link{FlowSPD.annotateGraph}}
+}
 \examples{
 }

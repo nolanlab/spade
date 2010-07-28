@@ -10,7 +10,7 @@ spanning tree connecting those clusters.
 \usage{
 FlowSPD.FCSToTree(infilenames, graphfilename, clusterfilename,
 		  cols = NULL, k = 200, arcsinh_cofactor = 5, 
-		  desired_samples = 40000)
+		  desired_samples = 50000)
 }
 \arguments{
   \item{infilenames}{

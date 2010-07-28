@@ -1,4 +1,9 @@
 FlowSPD.annotateMarkers <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
+    warning("Deprecated: Use FlowSPD.markerMedians instead")
+    FlowSPD.markerMedians(infilename, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
+}
+
+FlowSPD.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
 
     # Load in FCS file
     in_fcs  <- read.FCS(infilename);
@@ -66,7 +71,7 @@ FlowSPD.layout.arch <-  function(mst_graph) {
 
     # Compute the positions for each vertices
     # --------------------------------------------------------------------------
-    v_pos <- array(0,c(num_nodes,2))
+    v_pos <- array(0,c(vcount(mst_graph),2))
 
     # The longest path is the backbone arch
     terminals <- which(hops == max(hops), arr.ind=TRUE)[1,] - 1  # igraph vertices are 0-indexed
@@ -113,6 +118,30 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     v_pos
 }
 
+FlowSPD.annotateGraph <- function(graph, layout=NULL, ...) {
+    if (!is.igraph(graph)) {
+	stop("Not a graph object")
+    }
+
+    if (!is.null(layout) && is.matrix(layout)) {
+	if (nrow(layout) != vcount(graph) || ncol(layout) != 2) {
+	    stop("Ill-formated layout matrix, must 2 columns (x,y) and as many rows as vertices")
+	}
+	graph <- set.vertex.attribute(graph, "graphics.x", value=layout[,1])
+	graph <- set.vertex.attribute(graph, "graphics.y", value=layout[,2])
+    }
+
+    for (l in list(...)) {
+	if (!is.matrix(l) || nrow(l) != vcount(graph)) {
+	    stop(paste("Argument:",quote(l),"must be a matrix, and have as many rows as vertices"))
+	}
+	for (c in colnames(l)) {
+	    graph <- set.vertex.attribute(graph,c,value=l[,c])
+	}
+    }
+    graph
+}
+
 FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
     if (!is.igraph(graph)) {
 	stop("Not a graph object")
@@ -155,13 +184,13 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
 	    writeLines("node [",con=file)
 	 
 	    for (a in v_attr) {
-		writeLines(write.attr(a,get.vertex.attribute(mst_graph,a,index=v)),con=file)
+		writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
 	    } 	    
 
 	    writeLines("graphics [",con=file)
 	    for (a in v_attr_g) {
 		parts <- unlist(strsplit(a,"[.]"))
-		writeLines(write.attr(parts[2],get.vertex.attribute(mst_graph,a,index=v)),con=file)
+		writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
 	    }
 	    writeLines("]",con=file)
 	      
@@ -180,7 +209,7 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
 	    pts <- get.edges(graph,e)
 	    writeLines(c(paste("source",pts[1]), paste("target",pts[2])),con=file)
 	    for (a in e_attr) {
-		writeLines(paste(a,get.edge.attribute(mst_graph,a,index=e)),con=file)
+		writeLines(paste(a,get.edge.attribute(graph,a,index=e)),con=file)
 	    }	
 
 	    writeLines("]",con=file)	
