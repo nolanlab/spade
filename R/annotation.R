@@ -31,22 +31,22 @@ FlowSPD.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
     idxs <- subset(idxs, idxs != c_idx)  # Strip out cluster column
     data_c <- in_data[,idxs]             # Select out data columns    
 
-    counts  <- c()
+    count  <- c()
     medians <- c()
    
     for (i in c_ids) {
 	data_s <- asinh(subset(data_c, c_asn == i) / arcsinh_cofactor)
 	
-	counts  <- rbind(counts, nrow(data_s))
+	count   <- rbind(count, nrow(data_s))
 	medians <- rbind(medians, apply(data_s, 2, median))
     }
  
-    colnames(counts)  <- c("count")
-    rownames(counts)  <- c_ids
+    colnames(count)  <- c("count")
+    rownames(count)  <- c_ids
     colnames(medians) <- pd$desc[idxs]
     rownames(medians) <- c_ids
 
-    list(counts=counts, medians=medians)
+    list(count=count, medians=medians)
 }
 
 FlowSPD.layout.arch <-  function(mst_graph) {
@@ -118,7 +118,7 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     v_pos
 }
 
-FlowSPD.annotateGraph <- function(graph, layout=NULL, ...) {
+FlowSPD.annotateGraph <- function(graph, layout=NULL, anno) {
     if (!is.igraph(graph)) {
 	stop("Not a graph object")
     }
@@ -131,12 +131,16 @@ FlowSPD.annotateGraph <- function(graph, layout=NULL, ...) {
 	graph <- set.vertex.attribute(graph, "graphics.y", value=layout[,2])
     }
 
-    for (l in list(...)) {
+    if (!is.list(anno)) {
+	stop("anno must be a list with named entries");
+    }
+    for (i in 1:length(anno)) {
+	l <- anno[[i]]
 	if (!is.matrix(l) || nrow(l) != vcount(graph)) {
 	    stop(paste("Argument:",quote(l),"must be a matrix, and have as many rows as vertices"))
 	}
 	for (c in colnames(l)) {
-	    graph <- set.vertex.attribute(graph,c,value=l[,c])
+	    graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),value=l[,c])
 	}
     }
     graph
@@ -165,7 +169,10 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
 	
 	write.attr <- function(name, attr) {
 	    # Strip out non-alphanumeric characters to avoid Cytoscape parsing errors
-	    name <- sub("[^A-Za-z0-9]","",name)
+	    name <- gsub("[^A-Za-z0-9]","",name)
+	    if (length(grep("^[0-9]",name))) {
+		name <- paste("spade",name,sep="")
+	    }
 	    if (is.character(attr))
 		paste(name," \"",attr,"\"",sep="")
 	    else

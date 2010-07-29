@@ -27,7 +27,7 @@ FlowSPD.annotateMarkers is deprecated.
 }
 \value{
 List with:
-\item{counts}{Matrix of observation count for clusters}
+\item{count}{Matrix of observation count for clusters}
 \item{medians}{Matrix of medians for specified columns}
 }
 \references{

@@ -7,7 +7,7 @@ Add attributes to graph
 Add specific and arbitrary attributes to a graph
 }
 \usage{
-FlowSPD.annotateGraph(graph, layout = NULL, ...)
+FlowSPD.annotateGraph(graph, layout = NULL, anno)
 }
 \arguments{
   \item{graph}{
@@ -16,8 +16,8 @@ The graph object to work on. Note that the original graph is never modified, a n
   \item{layout}{
 Optional numeric matrix with vertex x,y positions with the same number of rows as vertices and at least two columns, the x and y positions.
 }
-  \item{\dots}{
-Data matrices to add as attributes. All arguments must have the same number of rows as vertices. Column names are used as attribute names.
+  \item{anno}{
+List of annotations to add to the graph. Each entry in list must have a name and must be a matrix. All matrices must have the same number of rows as vertices. List entry name plus column names are used as attribute names (unless they match, then just the column name is used).
 }
 }
 \details{
