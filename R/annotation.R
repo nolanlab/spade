@@ -164,6 +164,8 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
     write.gml <- function(graph,file) {
 	
 	write.attr <- function(name, attr) {
+	    # Strip out non-alphanumeric characters to avoid Cytoscape parsing errors
+	    name <- sub("[^A-Za-z0-9]","",name)
 	    if (is.character(attr))
 		paste(name," \"",attr,"\"",sep="")
 	    else
