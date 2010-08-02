@@ -13,5 +13,6 @@ export(
     "FlowSPD.write.graph",
     "FlowSPD.layout.arch_layout",
     "FlowSPD.annotateGraph",
-    "FlowSPD.driver"
+    "FlowSPD.driver",
+    "FlowSPD.plot.trees"
 )

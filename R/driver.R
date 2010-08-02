@@ -1,6 +1,10 @@
+FlowSPD.strip.sep <- function(name) {
+    ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
+}
+
 FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL) {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(files,pattern="*.fcs")
+	files <- dir(FlowSPD.strip.set(files),full.names=TRUE,pattern=glob2rx("*.fcs"))
     }
 
     out_dir_info <- file.info(out_dir)
@@ -10,7 +14,7 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
     if (!file.info(out_dir)$isdir) {
 	stop(paste("out_dir:",out_dir,"is not a directory"))
     }
-    out_dir <- paste(out_dir,.Platform$file,sep="")
+    out_dir <- paste(FlowSPD.strip.sep(out_dir),.Platform$file,sep="")
 
     density_files <- c()
     sampled_files <- c()
@@ -41,7 +45,8 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
     
     reference_medians = NULL
     if (!is.null(reference_file)) {
-	reference_medians <- FlowSPD.markerMedians(paste(out_dir,reference_file,".density.fcs.cluster.fcs",sep=""), cols=fold_cols, archsinh_cofactor=arcsinh_cofactor)
+	reference_file <- paste(out_dir,reference_file,".density.fcs.cluster.fcs",sep="");
+	reference_medians <- FlowSPD.markerMedians(reference_file, cols=fold_cols, archsinh_cofactor=arcsinh_cofactor)
     }
 
     for (f in sampled_files) {
@@ -58,4 +63,250 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
     }
     
     invisible(NULL)
+}
+
+# The following functions are copied from the TeachingDemos package, 
+# authored by Greg Snow <greg.snow at imail.org>, and licensed under
+# the Artistic-2.0 license.
+
+cnvrt.coords <- function(x,y=NULL,input=c('usr','plt','fig','dev','tdev')) {
+
+  input <- match.arg(input)
+  xy <- xy.coords(x,y, recycle=TRUE)
+
+  cusr <- par('usr')
+  cplt <- par('plt')
+  cfig <- par('fig')
+  cdin <- par('din')
+  comi <- par('omi')
+  cdev <- c(comi[2]/cdin[1],(cdin[1]-comi[4])/cdin[1],
+            comi[1]/cdin[2],(cdin[2]-comi[3])/cdin[2])
+
+  if(input=='usr'){
+    usr <- xy
+
+    plt <- list()
+    plt$x <- (xy$x-cusr[1])/(cusr[2]-cusr[1])
+    plt$y <- (xy$y-cusr[3])/(cusr[4]-cusr[3])
+
+    fig <- list()
+    fig$x <- plt$x*(cplt[2]-cplt[1])+cplt[1]
+    fig$y <- plt$y*(cplt[4]-cplt[3])+cplt[3]
+
+    dev <- list()
+    dev$x <- fig$x*(cfig[2]-cfig[1])+cfig[1]
+    dev$y <- fig$y*(cfig[4]-cfig[3])+cfig[3]
+
+    tdev <- list()
+    tdev$x <- dev$x*(cdev[2]-cdev[1])+cdev[1]
+    tdev$y <- dev$y*(cdev[4]-cdev[3])+cdev[3]
+
+    return( list( usr=usr, plt=plt, fig=fig, dev=dev, tdev=tdev ) )
+  }
+
+  if(input=='plt') {
+
+    plt <- xy
+
+    usr <- list()
+    usr$x <- plt$x*(cusr[2]-cusr[1])+cusr[1]
+    usr$y <- plt$y*(cusr[4]-cusr[3])+cusr[3]
+
+    fig <- list()
+    fig$x <- plt$x*(cplt[2]-cplt[1])+cplt[1]
+    fig$y <- plt$y*(cplt[4]-cplt[3])+cplt[3]
+
+    dev <- list()
+    dev$x <- fig$x*(cfig[2]-cfig[1])+cfig[1]
+    dev$y <- fig$y*(cfig[4]-cfig[3])+cfig[3]
+
+    tdev <- list()
+    tdev$x <- dev$x*(cdev[2]-cdev[1])+cdev[1]
+    tdev$y <- dev$y*(cdev[4]-cdev[3])+cdev[3]
+
+    return( list( usr=usr, plt=plt, fig=fig, dev=dev, tdev=tdev ) )
+  }
+
+  if(input=='fig') {
+
+    fig <- xy
+
+    plt <- list()
+    plt$x <- (fig$x-cplt[1])/(cplt[2]-cplt[1])
+    plt$y <- (fig$y-cplt[3])/(cplt[4]-cplt[3])
+
+    usr <- list()
+    usr$x <- plt$x*(cusr[2]-cusr[1])+cusr[1]
+    usr$y <- plt$y*(cusr[4]-cusr[3])+cusr[3]
+
+    dev <- list()
+    dev$x <- fig$x*(cfig[2]-cfig[1])+cfig[1]
+    dev$y <- fig$y*(cfig[4]-cfig[3])+cfig[3]
+
+    tdev <- list()
+    tdev$x <- dev$x*(cdev[2]-cdev[1])+cdev[1]
+    tdev$y <- dev$y*(cdev[4]-cdev[3])+cdev[3]
+
+    return( list( usr=usr, plt=plt, fig=fig, dev=dev, tdev=tdev ) )
+  }
+
+  if(input=='dev'){
+    dev <- xy
+
+    fig <- list()
+    fig$x <- (dev$x-cfig[1])/(cfig[2]-cfig[1])
+    fig$y <- (dev$y-cfig[3])/(cfig[4]-cfig[3])
+
+    plt <- list()
+    plt$x <- (fig$x-cplt[1])/(cplt[2]-cplt[1])
+    plt$y <- (fig$y-cplt[3])/(cplt[4]-cplt[3])
+
+    usr <- list()
+    usr$x <- plt$x*(cusr[2]-cusr[1])+cusr[1]
+    usr$y <- plt$y*(cusr[4]-cusr[3])+cusr[3]
+
+    tdev <- list()
+    tdev$x <- dev$x*(cdev[2]-cdev[1])+cdev[1]
+    tdev$y <- dev$y*(cdev[4]-cdev[3])+cdev[3]
+
+    return( list( usr=usr, plt=plt, fig=fig, dev=dev, tdev=tdev ) )
+  }
+
+  if(input=='tdev'){
+    tdev <- xy
+
+    dev <- list()
+    dev$x <- (tdev$x-cdev[1])/(cdev[2]-cdev[1])
+    dev$y <- (tdev$y-cdev[3])/(cdev[4]-cdev[3])
+
+    fig <- list()
+    fig$x <- (dev$x-cfig[1])/(cfig[2]-cfig[1])
+    fig$y <- (dev$y-cfig[3])/(cfig[4]-cfig[3])
+
+    plt <- list()
+    plt$x <- (fig$x-cplt[1])/(cplt[2]-cplt[1])
+    plt$y <- (fig$y-cplt[3])/(cplt[4]-cplt[3])
+
+    usr <- list()
+    usr$x <- plt$x*(cusr[2]-cusr[1])+cusr[1]
+    usr$y <- plt$y*(cusr[4]-cusr[3])+cusr[3]
+
+    tdev <- list()
+    tdev$x <- dev$x*(cdev[2]-cdev[1])+cdev[1]
+    tdev$y <- dev$y*(cdev[4]-cdev[3])+cdev[3]
+
+    return( list( usr=usr, plt=plt, fig=fig, dev=dev, tdev=tdev ) )
+  }
+
+}
+
+subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
+                    inset=c(0,0), type=c('plt','fig'), pars=NULL){
+
+  old.par <- par(no.readonly=TRUE)
+  on.exit(par(old.par))
+
+  type <- match.arg(type)
+
+  if(missing(x)) x <- locator(2)
+
+  if(is.character(x)) {
+      if(length(inset) == 1) inset <- rep(inset,2)
+      x.char <- x
+      tmp <- par('usr')
+      x <- (tmp[1]+tmp[2])/2
+      y <- (tmp[3]+tmp[4])/2
+
+      if( length(grep('left',x.char, ignore.case=TRUE))) {
+          x <- tmp[1] + inset[1]*(tmp[2]-tmp[1])
+          if(missing(hadj)) hadj <- 0
+      }
+      if( length(grep('right',x.char, ignore.case=TRUE))) {
+          x <- tmp[2] - inset[1]*(tmp[2]-tmp[1])
+          if(missing(hadj)) hadj <- 1
+      }
+      if( length(grep('top',x.char, ignore.case=TRUE))) {
+          y <- tmp[4] - inset[2]*(tmp[4]-tmp[3])
+          if(missing(vadj)) vadj <- 1
+      }
+      if( length(grep('bottom',x.char, ignore.case=TRUE))) {
+          y <- tmp[3] + inset[2]*(tmp[4]-tmp[3])
+          if(missing(vadj)) vadj <- 0
+      }
+  }
+
+  xy <- xy.coords(x,y)
+
+  if(length(xy$x) != 2){
+    pin <- par('pin')
+    tmp <- cnvrt.coords(xy$x[1],xy$y[1],'usr')$plt
+
+    x <- c( tmp$x - hadj*size[1]/pin[1],
+            tmp$x + (1-hadj)*size[1]/pin[1] )
+    y <- c( tmp$y - vadj*size[2]/pin[2],
+            tmp$y + (1-vadj)*size[2]/pin[2] )
+
+    xy <- cnvrt.coords(x,y,'plt')$fig
+  } else {
+    xy <- cnvrt.coords(xy,,'usr')$fig
+  }
+
+  par(pars)
+  if(type=='fig'){
+      par(fig=c(xy$x,xy$y), new=TRUE)
+  } else {
+      par(plt=c(xy$x,xy$y), new=TRUE)
+  }
+  fun
+  tmp.par <- par(no.readonly=TRUE)
+
+  return(invisible(tmp.par))
+}
+
+
+FlowSPD.plot.trees <- function(files, pattern="*.gml", out_dir=".", layout=FlowSPD.layout.arch, attr="median|fold") {
+    if (length(files) == 1 && file.info(files)$isdir) {
+	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(pattern))    
+    }
+
+    out_dir_info <- file.info(out_dir)
+    if (is.na(out_dir_info$isdir)) {
+	dir.create(out_dir)
+    }
+    if (!file.info(out_dir)$isdir) {
+	stop(paste("out_dir:",out_dir,"is not a directory"))
+    }
+    out_dir <- paste(FlowSPD.strip.sep(out_dir),.Platform$file,sep="")
+
+    jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+    colorscale <- jet.colors(100)
+
+    for (f in files) {
+	graph <- read.graph(f, format="gml")
+	attrs <- list.vertex.attributes(graph)
+
+	if (is.function(layout))
+	    graph_l <- layout(graph)
+	else
+	    graph_l <- layout	
+	
+	vsize <- V(graph)$count/max(V(graph)$count) * 3 + 2
+	for (i in grep(attr, attrs)) {
+	    # Compute the color for each vertex using color gradient
+	    attr <- get.vertex.attribute(graph,attrs[i])
+	    color <- findInterval(attr,seq(min(attr),max(attr),length.out=length(colorscale)))
+	    V(graph)$color <- colorscale[color]
+	    
+	    # Plot the tree, with legend showing the gradient
+	    pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
+	    
+	    plot(graph, layout=graph_l, vertex.shape="csquare", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA)
+	    
+	    title(main=attrs[i])
+	    subplot(image(seq(min(attr),max(attr),length.out=length(colorscale)),c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,xlab="",ylab="",yaxt="n",xaxp=c(round(min(attr),2),round(max(attr),2),1)),x="right,bottom",size=c(1,.20))
+	    
+	    dev.off()
+	}
+    }
+
 }
