@@ -4,9 +4,9 @@ FlowSPD.strip.sep <- function(name) {
 
 FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL) {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(FlowSPD.strip.set(files),full.names=TRUE,pattern=glob2rx("*.fcs"))
+	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx("*.fcs"))
     }
-
+    
     out_dir_info <- file.info(out_dir)
     if (is.na(out_dir_info$isdir)) {
 	dir.create(out_dir)
@@ -56,7 +56,7 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
 	
 	if (!is.null(reference_medians)) {
 	    a <- FlowSPD.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
-	    a <- list(counts=a$counts, fold=(a$medians-reference_medians$medians))
+	    a <- list(count=a$count, fold=(a$medians-reference_medians$medians))
 	    g <- FlowSPD.annotateGraph(graph, layout=layout, a)
 	    FlowSPD.write.graph(g, paste(f,".fold.gml",sep=""), format="gml")
 	}
