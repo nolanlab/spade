@@ -7,11 +7,14 @@ FlowSPD workflow driver
 A function to drive the FlowSPD workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-FlowSPD.driver(files, out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = FlowSPD.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL)
+FlowSPD.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = FlowSPD.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL)
 }
 \arguments{
   \item{files}{
 Either a vector of FCS files, or a directory. If a directory, all of the *.fcs files in the directory are processed.
+}
+  \item{file_pattern}{
+Wildcard pattern to match file if \code{files} is a director
 }
   \item{out_dir}{
 Directory where output files are written. Will be created if it does not exist.

@@ -136,11 +136,12 @@ FlowSPD.annotateGraph <- function(graph, layout=NULL, anno) {
     }
     for (i in 1:length(anno)) {
 	l <- anno[[i]]
-	if (!is.matrix(l) || nrow(l) != vcount(graph)) {
-	    stop(paste("Argument:",quote(l),"must be a matrix, and have as many rows as vertices"))
+	if (!is.matrix(l)) {
+	    stop(paste("Argument:",quote(l),"must be a matrix"))
 	}
+	vt <- V(graph)[match(rownames(l),V(graph)$name)-1]  # Vertex IDS are 0 indexed
 	for (c in colnames(l)) {
-	    graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),value=l[,c])
+	    graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),index=vt, value=l[,c])
 	}
     }
     graph
@@ -173,7 +174,9 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
 	    if (length(grep("^[0-9]",name))) {
 		name <- paste("spade",name,sep="")
 	    }
-	    if (is.character(attr))
+	    if (is.na(attr))
+		paste(name,"NaN")
+	    else if (is.character(attr))
 		paste(name," \"",attr,"\"",sep="")
 	    else
 		paste(name,attr)
@@ -386,7 +389,7 @@ if (length(side_chains)!=0)
 			for (m in 1:length(r))
 			{
 				n_s = which(potential_position_force[m, ,2]>=0);
-				if (length(n_s)==0) {continue;}
+				if (length(n_s)==0) {next;}
 				I = which(potential_position_force[m,n_s,1]==min(potential_position_force[m,n_s,1]))[1];
 				best_for_each_layer = rbind(best_for_each_layer,c(m,n_s[I]));
 				best_string_force_each_layer = rbind(best_string_force_each_layer, potential_position_force[m,n_s[I],2]);

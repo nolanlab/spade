@@ -2,11 +2,13 @@ FlowSPD.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
 
-FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL) {
+FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL) {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx("*.fcs"))
+	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
     }
-    
+    if (length(files) == 0) {
+	stop("No input files found")
+    } 
     out_dir_info <- file.info(out_dir)
     if (is.na(out_dir_info$isdir)) {
 	dir.create(out_dir)
@@ -19,8 +21,9 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
     density_files <- c()
     sampled_files <- c()
     for (f in files) {
-	f_density <- paste(out_dir,f,".density.fcs",sep="")
-	f_sampled <- paste(out_dir,f,".downsample.fcs",sep="")
+	cat("Downsampling file:",f,"\n")
+	f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
+	f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 	
 	FlowSPD.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 	FlowSPD.downsampleFCS(f_density, f_sampled)
@@ -28,13 +31,15 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
 	density_files <- c(density_files, f_density)
 	sampled_files <- c(sampled_files, f_sampled)	
     }
-
+    
+    cat("Clustering files...\n")
     clust_file <- paste(out_dir,"clusters.table",sep="")
     graph_file <- paste(out_dir,"mst.gml",sep="")
     FlowSPD.FCSToTree(sampled_files, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 
     sampled_files <- c()
     for (f in density_files) {
+	cat("Upsampling file:",f,"\n")
 	f_sampled <- paste(f,".cluster.fcs",sep="")
 	FlowSPD.addClusterToFCS(f, f_sampled, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 	sampled_files <- c(sampled_files, f_sampled)
@@ -46,17 +51,23 @@ FlowSPD.driver <- function(files, out_dir=".", cluster_cols=NULL, arcsinh_cofact
     reference_medians = NULL
     if (!is.null(reference_file)) {
 	reference_file <- paste(out_dir,reference_file,".density.fcs.cluster.fcs",sep="");
-	reference_medians <- FlowSPD.markerMedians(reference_file, cols=fold_cols, archsinh_cofactor=arcsinh_cofactor)
+	reference_medians <- FlowSPD.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
     }
 
     for (f in sampled_files) {
+	if (f == reference_file)
+	    next
+
+	cat("Computing medians for file:",f,"\n")
 	a <- FlowSPD.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
 	g <- FlowSPD.annotateGraph(graph, layout=layout, a)
 	FlowSPD.write.graph(g, paste(f,".medians.gml",sep=""), format="gml")
 	
 	if (!is.null(reference_medians)) {
 	    a <- FlowSPD.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
-	    a <- list(count=a$count, fold=(a$medians-reference_medians$medians))
+	    # Not all files might have all clusters represented
+	    cc <- match(rownames(a$medians),rownames(reference_medians$medians))  # Common clusters
+	    a <- list(count=a$count, fold=(a$medians-reference_medians$medians[cc,]))
 	    g <- FlowSPD.annotateGraph(graph, layout=layout, a)
 	    FlowSPD.write.graph(g, paste(f,".fold.gml",sep=""), format="gml")
 	}
@@ -264,9 +275,9 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-FlowSPD.plot.trees <- function(files, pattern="*.gml", out_dir=".", layout=FlowSPD.layout.arch, attr="median|fold") {
+FlowSPD.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=FlowSPD.layout.arch, attr_pattern="median|fold") {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(pattern))    
+	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
 
     out_dir_info <- file.info(out_dir)
@@ -289,13 +300,21 @@ FlowSPD.plot.trees <- function(files, pattern="*.gml", out_dir=".", layout=FlowS
 	    graph_l <- layout(graph)
 	else
 	    graph_l <- layout	
-	
-	vsize <- V(graph)$count/max(V(graph)$count) * 3 + 2
-	for (i in grep(attr, attrs)) {
+
+	vsize <- V(graph)$count
+	vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
+	vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
+	vsize[is.na(vsize)] <- 1
+
+	for (i in grep(attr_pattern, attrs)) {
 	    # Compute the color for each vertex using color gradient
 	    attr <- get.vertex.attribute(graph,attrs[i])
-	    color <- findInterval(attr,seq(min(attr),max(attr),length.out=length(colorscale)))
-	    V(graph)$color <- colorscale[color]
+	    attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+	    
+	    grad <- seq(min(attr,na.rm=TRUE),max(attr,na.rm=TRUE),length.out=length(colorscale))
+	    color <- colorscale[findInterval(attr, grad)]
+	    color[is.na(attr)] <- "grey"
+	    V(graph)$color <- color
 	    
 	    # Plot the tree, with legend showing the gradient
 	    pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
@@ -303,7 +322,7 @@ FlowSPD.plot.trees <- function(files, pattern="*.gml", out_dir=".", layout=FlowS
 	    plot(graph, layout=graph_l, vertex.shape="csquare", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA)
 	    
 	    title(main=attrs[i])
-	    subplot(image(seq(min(attr),max(attr),length.out=length(colorscale)),c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,xlab="",ylab="",yaxt="n",xaxp=c(round(min(attr),2),round(max(attr),2),1)),x="right,bottom",size=c(1,.20))
+	    subplot(image(grad,c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,xlab="",ylab="",yaxt="n",xaxp=c(round(min(attr,na.rm=TRUE),2),round(max(attr,na.rm=TRUE),2),1)),x="right,bottom",size=c(1,.20))
 	    
 	    dev.off()
 	}
