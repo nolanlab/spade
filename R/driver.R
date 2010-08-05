@@ -2,7 +2,7 @@ FlowSPD.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
 
-FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL) {
+FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000) {
     if (length(files) == 1 && file.info(files)$isdir) {
 	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
     }
@@ -26,7 +26,7 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
 	f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 	
 	FlowSPD.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
-	FlowSPD.downsampleFCS(f_density, f_sampled)
+	FlowSPD.downsampleFCS(f_density, f_sampled, desired_samples=downsampling_samples)
 	
 	density_files <- c(density_files, f_density)
 	sampled_files <- c(sampled_files, f_sampled)	
