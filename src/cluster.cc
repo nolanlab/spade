@@ -34,41 +34,7 @@ namespace {
 	return d_l;
     }
  
-    void
-    live_clusters(const Idx_t* merge, size_t obs, size_t k, std::set<Idx_t>& clusters) { 
-	clusters.insert((Idx_t)obs-1); // Initialize with "final" cluster
-	for (size_t i=obs-2; i>=0; i--) {
-	    if (clusters.size() >= k)
-		break;
-	    clusters.erase((Idx_t)(i+1)); // Recall cluster Ids of 1-indexed
-	    clusters.insert(merge[2*i]);
-	    clusters.insert(merge[2*i+1]); 
-	}
-    }
-
-    void
-    assign_observation(const Idx_t* merge, Idx_t cluster, Idx_t my_assgn, Idx_t* assgn) {
-	if (cluster < 0) {
-	    assgn[-(cluster+1)] = my_assgn;
-	} else {
-	    assign_observation(merge, merge[2*(cluster-1)], my_assgn, assgn);
-	    assign_observation(merge, merge[2*(cluster-1)+1], my_assgn, assgn);
-	}
-    }
-
-    struct Merge_t {
-	Idx_t from, into;
-	void set(Idx_t f, Idx_t i) { from = f; into = i; } 
-    };
-    
-    struct MergeCMP {
-	const Dist_t*  height;
-	MergeCMP(const Dist_t* height_a) : height(height_a) {}
-	bool operator()(const Merge_t& a, const Merge_t& b) const {
-	    return height[a.from] < height[b.from];
-	}
-    };
-    
+       
     /* Maintain state for a single cluster
      */
     class ACluster {
@@ -80,7 +46,6 @@ namespace {
 	Data_t* center;		// My cluster center
 	bool valid;		// Cluster statuses
 	bool merged;
-	Idx_t cluster_id;	// Current ID in merging data structure
 	const Data_t **members;	// Observations in my cluster
        	size_t num_members;
 
@@ -93,7 +58,6 @@ namespace {
 	    memcpy(center, &data[idx*dim], dim*sizeof(Data_t));
 
 	    valid = true; merged = false;
-	    cluster_id = -(Idx_t)(idx+1);  // Recall R is 1-indexed
 
 	    members = Calloc(1, const Data_t*);
 	    members[0]  = &data[idx*dim];
@@ -113,8 +77,11 @@ namespace {
 	bool get_merged() const { return merged; }
 	void set_merged(bool m) { merged = m; }
 
-	Idx_t get_cluster_id() const { return cluster_id; }
-	void set_cluster_id(Idx_t i) { cluster_id = i; }	
+	// Member iterators
+	typedef const Data_t** member_iterator;
+    
+	member_iterator member_begin() const { return members; }
+	member_iterator member_end() const { return members + num_members; }
 
 	// Helper structs
 	
@@ -125,6 +92,7 @@ namespace {
 	    bool operator()(const Data_t* l, const Data_t* r) { return l[col] < r[col]; }
 	};
 
+	// LessThan by "single" link distance between my center and other cluster's members
 	Dist_t slink_distance(const ACluster& a) const {
 	    Dist_t d = std::numeric_limits<Dist_t>::max();
 	    for (size_t i=0; i<a.num_members; i++)
@@ -132,7 +100,6 @@ namespace {
 	    return d;
 	}
 
-	// LessThan by "single" link distance between my center and other cluster's members
 	struct SLinkLT_RM {
 	    const ACluster& base;
 	    SLinkLT_RM(const ACluster& b) : base(b) {}
@@ -169,25 +136,27 @@ namespace {
     size_t ACluster::dim;
 
     void
-    cluster(const Data_t* data, size_t obs, size_t dim, Merge_t* merge) {
+    cluster(const Data_t* data, size_t obs, size_t dim, size_t k, Idx_t* assgn) {
 	ACluster::init_global(dim);
 	
-	Idx_t cur_merge = 0;  // Track current merge step
-
 	R::auto_ptr<ACluster> c_ap(Calloc(obs, ACluster));
 	ACluster *c_beg = c_ap.get(), *c_end = c_beg + obs;
 	for (size_t i=0; i<obs; i++)  // Initialize clusters for row major data
 	    c_beg[i].init_RM(i, data);
 	
-	while (cur_merge < (obs-1)) {
+	while (true) {
 	    // Only looking at "valid" clusters
 	    c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
-	    std::random_shuffle(c_beg, c_end);
 	    
-	    for (ACluster *i=c_beg; i<c_end; i++) // Reset for current merging round
+	    size_t num_valid = c_end - c_beg;
+	    if (num_valid < (size_t)(1.5 * k))
+		break;
+    
+	    for (ACluster *i=c_beg; i<c_end; i++)  // Reset for current merging round
 		i->reset_RM();	
-
-	    size_t fold = std::max((size_t)1 /* 2x */, (size_t)(c_end - c_beg) / 5000);
+	    std::random_shuffle(c_beg, c_end);  // Randomize order we consider merging clusters...
+	    
+	    size_t fold = std::max((size_t)1 /* 2x */, num_valid / 5000);
 	    while (true) {
 		// Find first valid, un-merged cluster in this round
 		ACluster* into = std::find_if(c_beg, c_end, std::not1(std::mem_fun_ref(&ACluster::get_merged)));
@@ -205,19 +174,22 @@ namespace {
 			goto END_ROUND;
 
 		    into->merge_in(into[i]);
-
-		    // Record merging operation
-		    merge[cur_merge].set(into->get_cluster_id(), into[i].get_cluster_id());
-		    into->set_cluster_id(++cur_merge); // Recall merging is 1-indexed
 		}
 	    }
 END_ROUND:;
 	}
 
-	// Clean up
+	// Assignment and clean up
+	Idx_t cur_Id = 1;  // Recall R is 1-indexed
 	for (ACluster *i=c_beg; i<c_end; i++) {
 	    if (i->get_valid()) {
 		i->set_valid(false);
+		
+		for (ACluster::member_iterator b=i->member_begin(), e=i->member_end(); b!=e; ++b) {
+		    assgn[(*b - data) / dim] = cur_Id;
+		}
+		++cur_Id;	
+		
 		i->destroy();
 	    }
 	}	    
@@ -236,36 +208,18 @@ extern "C" {
 	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
 	size_t k_l = static_cast<size_t>(asInteger(k));
 
-	assert(sizeof(Merge_t) == 2*sizeof(Idx_t));
-
-	SEXP ans, names, merge, assgn; int n_protected = 0;
+	SEXP ans, names, assgn; int n_protected = 0;
 	
-	// Cluster observations
-	PROTECT(merge = allocMatrix(INTSXP, 2, obs-1)); n_protected++;
-	Idx_t *merge_l = static_cast<Idx_t*>(INTEGER(merge));
-
-	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, (Merge_t*)merge_l);
-		
-
-	// Assigning observations to clusters	
+	// Cluster and assign observations to clusters	
 	PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
-
-	std::set<Idx_t> clusters;
-	live_clusters((Idx_t*)merge_l, obs, k_l, clusters);  // Cut tree to find ~k clusters
-	
-	Idx_t cluster_index = 1; 
-	for (std::set<Idx_t>::iterator i=clusters.begin(),e=clusters.end(); i!=e; ++i)
-	    assign_observation((Idx_t*)merge_l, *i, cluster_index++, static_cast<Idx_t*>(INTEGER(assgn)));	   
-
+	cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, k_l, static_cast<Idx_t*>(INTEGER(assgn)));
 
 	// Assemble return object
-	PROTECT(ans = allocVector(VECSXP,2)); n_protected++;
-	PROTECT(names = allocVector(STRSXP,2)); n_protected++;
+	PROTECT(ans = allocVector(VECSXP,1)); n_protected++;
+	PROTECT(names = allocVector(STRSXP,1)); n_protected++;
 
-	SET_VECTOR_ELT(ans, 0, merge);
-	SET_STRING_ELT(names, 0, mkChar("merge"));
-	SET_VECTOR_ELT(ans, 1, assgn);
-	SET_STRING_ELT(names, 1, mkChar("assgn"));
+	SET_VECTOR_ELT(ans, 0, assgn);
+	SET_STRING_ELT(names, 0, mkChar("assgn"));
 
 	setAttrib(ans, R_NamesSymbol, names);
 	UNPROTECT(n_protected);
