@@ -86,8 +86,9 @@ FlowSPD.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, 
 	# samples retained above that density equals approximately the desired
 	# number of samples
 	density_s <- sort(density)
-	targets   <- density_s*rev(cumsum(1.0/rev(density_s)))+1:length(density)
-	boundary  <- density_s[which.min(targets < desired_samples)]
+	cdf       <- rev(cumsum(1.0/rev(density_s)))
+	targets   <- density_s*cdf+1:length(density)
+	boundary  <- ifelse(desired_samples<=targets[1], desired_samples/cdf[1], density_s[which.min(targets < desired_samples)])
 	out_data  <- subset(out_data,boundary/density > runif(length(density)))
     }
 
