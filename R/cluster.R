@@ -12,9 +12,9 @@ FlowSPD.cluster <- function(tbl, k) {
 	obs <- which(clust$assgn == i)
 	if (length(obs) > 1) {
 	    centers <- rbind(centers,colMeans(tbl[obs,]))
-	    clust$assgn[obs] = nrow(centers)
+	    clust$assgn[obs] <- nrow(centers)
 	} else {
-	    clust$assgn[obs] = NA
+	    is.na(clust$assgn) <- obs
 	}
     }
     return(list(centers=centers,assign=clust$assgn))

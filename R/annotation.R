@@ -14,7 +14,7 @@ FlowSPD.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
 
     # Find cluster column
     c_idx <- match("cluster",pd$desc)
-    if (is.na(c_idx)) {
+    if (any(is.na(c_idx))) {
 	stop("No cluster parameter in FCS file")
     }
     c_asn <- in_data[,c_idx]
