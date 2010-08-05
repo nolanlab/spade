@@ -33,9 +33,10 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     }
     
     cat("Clustering files...\n")
+    cells_file <- paste(out_dir,"clusters.fcs",sep="")
     clust_file <- paste(out_dir,"clusters.table",sep="")
     graph_file <- paste(out_dir,"mst.gml",sep="")
-    FlowSPD.FCSToTree(sampled_files, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+    FlowSPD.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 
     sampled_files <- c()
     for (f in density_files) {

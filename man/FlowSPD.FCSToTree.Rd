@@ -8,13 +8,16 @@ Hierarchically cluster observations in a set of FCS files and build a minimum
 spanning tree connecting those clusters.
 }
 \usage{
-FlowSPD.FCSToTree(infilenames, graphfilename, clusterfilename,
+FlowSPD.FCSToTree(infilenames, outfilename, graphfilename, clusterfilename,
 		  cols = NULL, k = 200, arcsinh_cofactor = 5, 
 		  desired_samples = 50000)
 }
 \arguments{
   \item{infilenames}{
 Vector of FCS file names that should be used as input
+}
+  \item{outfilename}{
+Name of FCS file to write subset of cells used for clustering along with their cluster assignment
 }
   \item{graphfilename}{
 Name of file to write gml graph description

@@ -9,13 +9,15 @@ FlowSPD.cluster <- function(tbl, k) {
     
     centers = c()
     for (i in c(1:max(clust$assgn))) {
-	obs <- tbl[clust$assgn == i,]
-	# Only keep clusters with more than one observation
-	if (is.matrix(obs) && nrow(obs) > 1) {
-	    centers = rbind(centers,colMeans(obs))
+	obs <- which(clust$assgn == i)
+	if (length(obs) > 1) {
+	    centers <- rbind(centers,colMeans(tbl[obs,]))
+	    clust$assgn[obs] = nrow(centers)
+	} else {
+	    clust$assgn[obs] = NA
 	}
     }
-    centers
+    return(list(centers=centers,assign=clust$assgn))
 }
 
 FlowSPD.clustersToMST <- function(centers, method="manhattan") {
@@ -29,7 +31,7 @@ FlowSPD.writeGraph <- function(graph, outfilename) {
      write.graph(graph, outfilename, format="gml")
 }
 
-FlowSPD.FCSToTree <- function(infilenames, graphfilename, clusterfilename, 
+FlowSPD.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfilename, 
     cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000) {
     
     data = c()
@@ -59,11 +61,16 @@ FlowSPD.FCSToTree <- function(infilenames, graphfilename, clusterfilename,
 	data <- data[sample(1:nrow(data),desired_samples),]
     }
 
-    # Compute the cluster centers
-    centers <- FlowSPD.cluster(asinh(data/arcsinh_cofactor),k);
+    # Compute the cluster centers, marking any single observation clusters as NA
+    clust <- FlowSPD.cluster(asinh(data/arcsinh_cofactor),k);
     
-    # Write out the MST and cluster centers to specified files
-    FlowSPD.writeGraph(FlowSPD.clustersToMST(centers),graphfilename);
-    write.table(centers,file=clusterfilename,row.names=FALSE,col.names=colnames(data))
+    # Write out FCS file downsampled data used in clustering, along with assignment
+    # Strip out observations in single observation clusters
+    ff <- FlowSPD.build.flowFrame(subset(cbind(data, cluster=clust$assign),!is.na(clust$assign)))
+    write.FCS(ff, outfilename) 
+
+    # Write out the MST and cluster centers to specified files ignoring single observation clusters
+    FlowSPD.writeGraph(FlowSPD.clustersToMST(clust$centers),graphfilename);
+    write.table(clust$centers,file=clusterfilename,row.names=FALSE,col.names=colnames(data))
 }
  
