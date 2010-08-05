@@ -17,7 +17,7 @@ Name of input FCS file
 Name of output FCS file
 }
   \item{clusterfilename}{
-Name of file containing table of cluster centers with header line
+Name of FCS file with subset of cells used in clustering
 }
   \item{cols}{
 Usually a vector of strings specifying the columns to be used in the density

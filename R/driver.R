@@ -42,7 +42,7 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     for (f in density_files) {
 	cat("Upsampling file:",f,"\n")
 	f_sampled <- paste(f,".cluster.fcs",sep="")
-	FlowSPD.addClusterToFCS(f, f_sampled, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+	FlowSPD.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 	sampled_files <- c(sampled_files, f_sampled)
     }
 

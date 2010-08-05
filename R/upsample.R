@@ -1,6 +1,6 @@
 # Transpose data before call to put in row major order
-FlowSPD.assignToCluster <- function(tbl, clusters)
-    .Call("FSPD_assign",t(tbl),t(clusters))
+FlowSPD.assignToCluster <- function(tbl, cluster_data, cluster_assign)
+    .Call("FSPD_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
 
 FlowSPD.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     cols=NULL, arcsinh_cofactor=5.0) {
@@ -14,27 +14,29 @@ FlowSPD.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
 
     # Select out the desired columns
     if (is.null(cols)) {
-	cols = as.vector(pd$desc) 
+	cols <- as.vector(pd$desc) 
     }
     idxs <- match(cols,pd$desc)
-    if (any(is.na(idxs))) { 
-	stop("Invalid column specifier") 
-    }
+    na.fail(idxs)
+   
+    # Load in clustered FCS file
+    cluster_fcs  <- read.FCS(clusterfilename)
+    cluster_data <- exprs(cluster_fcs)    
 
-    # Load in clusters
-    clusters <- read.table(clusterfilename, header=TRUE, check.names=FALSE)
-    if (!all(colnames(clusters) == pd$desc[idxs])) {
-	stop("Selected columns don't match cluster columns")
-    }
-
+    cluster_params <- parameters(cluster_fcs)
+    cluster_pd     <- pData(cluster_params)
+    
+    c_idxs <- match(cols, cluster_pd$desc)
+    na.fail(c_idxs)
+ 
     # Assign observations to clusters
-    assign <- FlowSPD.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor),clusters)
+    assign <- FlowSPD.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor), asinh(cluster_data[,c_idxs]/arcsinh_cofactor), cluster_data[,"cluster"])
 
-    # Reload FCS file without transformation, so it can be accurately rewritten...
+    # Reload FCS file without transformation, so it can be compactly rewritten...
     in_fcs <- read.FCS(infilename,transform=FALSE)
     in_data <- exprs(in_fcs);
 
-    # Add column named "density" to the FCS file
+    # Add column named "cluster" to the FCS file
     channel_number <- ncol(in_fcs)+1;
     channel_id     <- paste("$P",channel_number,sep="");
     channel_name   <- "cluster";
