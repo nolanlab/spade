@@ -2,7 +2,7 @@ FlowSPD.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
 
-FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000) {
+FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000, k=200) {
     if (length(files) == 1 && file.info(files)$isdir) {
 	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
     }
@@ -36,7 +36,7 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     cells_file <- paste(out_dir,"clusters.fcs",sep="")
     clust_file <- paste(out_dir,"clusters.table",sep="")
     graph_file <- paste(out_dir,"mst.gml",sep="")
-    FlowSPD.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+    FlowSPD.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, k=k)
 
     sampled_files <- c()
     for (f in density_files) {
@@ -56,7 +56,7 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     }
 
     for (f in sampled_files) {
-	if (f == reference_file)
+	if (!is.null(reference_file) && f == reference_file)
 	    next
 
 	cat("Computing medians for file:",f,"\n")

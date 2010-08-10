@@ -7,7 +7,7 @@ FlowSPD workflow driver
 A function to drive the FlowSPD workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-FlowSPD.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = FlowSPD.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL, downsampling_samples=20000)
+FlowSPD.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = FlowSPD.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL, downsampling_samples=20000, k=200)
 }
 \arguments{
   \item{files}{
@@ -39,6 +39,9 @@ Similar to \code{cluster_cols}, specifies columns for which to calculate fold ch
 }
   \item{downsampling_samples}{
 Desired number of samples remaining after downsampling files
+}
+  \item{k}{
+Desirec number of clusters. Algorithm might create between [k/2,3k/2] clusters.
 }
 }
 \details{

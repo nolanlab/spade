@@ -56,7 +56,6 @@ extern "C" {
 	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
 	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]),
 	       cls = static_cast<size_t>(INTEGER(GET_DIM(cluster_data))[1]);
-	Rprintf("Obs: %zu, Dim: %zu, Cls: %zu\n",obs,dim,cls);
 	int n_protected = 0;
 	
 	SEXP assign;
