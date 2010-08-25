@@ -1,7 +1,7 @@
 # Cluster observations into ~k clusters
 FlowSPD.cluster <- function(tbl, k) {
     if (nrow(tbl) > 60000) {
-	warning("Potentially too many observations for the clustering step",immediate=TRUE);
+		warning("Potentially too many observations for the clustering step",immediate=TRUE);
     }
 
     # Transpose table before call into row major order
@@ -9,13 +9,13 @@ FlowSPD.cluster <- function(tbl, k) {
     
     centers = c()
     for (i in c(1:max(clust$assgn))) {
-	obs <- which(clust$assgn == i)
-	if (length(obs) > 1) {
-	    centers <- rbind(centers,colMeans(tbl[obs,]))
-	    clust$assgn[obs] <- nrow(centers)
-	} else {
-	    is.na(clust$assgn) <- obs
-	}
+		obs <- which(clust$assgn == i)
+		if (length(obs) > 1) {
+			centers <- rbind(centers,colMeans(tbl[obs,]))
+			clust$assgn[obs] <- nrow(centers)
+		} else {
+			is.na(clust$assgn) <- obs
+		}
     }
     return(list(centers=centers,assign=clust$assgn))
 }
@@ -36,29 +36,29 @@ FlowSPD.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfi
     
     data = c()
     for (f in infilenames) {
-	# Load in FCS file
-	in_fcs  <- read.FCS(f);
-	in_data <- exprs(in_fcs);
+		# Load in FCS file
+		in_fcs  <- read.FCS(f);
+		in_data <- exprs(in_fcs);
 
-	params <- parameters(in_fcs);
-	pd     <- pData(params);
+		params <- parameters(in_fcs);
+		pd     <- pData(params);
 
-	# Select out the desired columns
-	if (is.null(cols)) { 
-	    cols = as.vector(pd$desc) 
-	}
-	idxs <- match(cols,pd$desc)
-	if (any(is.na(idxs))) { 
-	    stop("Invalid column specifier") 
-	}
+		# Select out the desired columns
+		if (is.null(cols)) { 
+			cols = as.vector(pd$desc) 
+		}
+		idxs <- match(cols,pd$desc)
+		if (any(is.na(idxs))) { 
+			stop("Invalid column specifier") 
+		}
 	
-	data <- rbind(data,in_data[,idxs])
-	colnames(data) <- pd$desc[idxs]
+		data <- rbind(data,in_data[,idxs])
+		colnames(data) <- pd$desc[idxs]
     }
 
     # Downsample data if neccessary 
     if (nrow(data) > desired_samples) {
-	data <- data[sample(1:nrow(data),desired_samples),]
+		data <- data[sample(1:nrow(data),desired_samples),]
     }
 
     # Compute the cluster centers, marking any single observation clusters as NA
