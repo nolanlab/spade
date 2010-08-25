@@ -61,31 +61,30 @@ namespace {
     void
     count_neighbors(Data_t* data, size_t dim, size_t obs, Dist_t kernel_width, Dist_t apprx_width, Count_t* densities) 
     {
-	std::fill(densities, densities+obs, 0);
-	#pragma omp parallel for shared(densities)	
-    	for (size_t i=0; i<obs; i++) {	    
-	    if (densities[i] > 0)
-		continue;
+		std::fill(densities, densities+obs, 0);
+#pragma omp parallel for shared(densities)	
+		for (size_t i=0; i<obs; i++) {	    
+			if (densities[i] > 0)
+				continue;
 
-	    std::vector<size_t> apprxs;  // Keep track on observations we can approximate
-	    Data_t *point = &data[i*dim];
-	    Count_t c = 0;
+			std::vector<size_t> apprxs;  // Keep track on observations we can approximate
+			Data_t *point = &data[i*dim];
+			Count_t c = 0;
 
-	    for (size_t j=0; j<obs; j++) {
-		Dist_t d = distance(point, &data[j*dim], dim);
-		if (d < apprx_width) {
-		    apprxs.push_back(j);
-		    c++;
-		} else if (d < kernel_width)
-		    c++;
-	    }
+			for (size_t j=0; j<obs; j++) {
+				Dist_t d = distance(point, &data[j*dim], dim);
+				if (d < kernel_width)
+					c++;
+				if (d < apprx_width)
+					apprxs.push_back(j);
+			}
 
-	    // Potential race condition on other density entries, use atomic
-	    // update to be safe
-	    for (size_t j=0; j<apprxs.size(); j++)
-		__sync_bool_compare_and_swap(densities+apprxs[j],0,c); //densities[apprxs[j]] = c;
-	    densities[i] = c;
-	}
+			// Potential race condition on other density entries, use atomic
+			// update to be safe
+			for (size_t j=0; j<apprxs.size(); j++)
+				__sync_bool_compare_and_swap(densities+apprxs[j],0,c); //densities[apprxs[j]] = c;
+			densities[i] = c;
+		}
 
     }	
         

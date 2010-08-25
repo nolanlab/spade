@@ -71,25 +71,30 @@ FlowSPD.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, 
     }
     
     # boundary[1]: exclusion, boundary[2]: potential target
-    boundary <- quantile(in_data[,d_idx],c(exclude_pctile,exclude_pctile+target_pctile),names=FALSE)
+    boundary <- quantile(in_data[,d_idx],c(exclude_pctile,target_pctile),names=FALSE)
     
     out_data <- subset(in_data, in_data[,d_idx] > boundary[1]) # Exclusion    
 
     density <- out_data[,d_idx]
     if (is.null(desired_samples)) {
-	boundary <- boundary[2]
-	out_data <- subset(out_data,boundary/density > runif(nrow(out_data)))
+		boundary <- boundary[2]
+		out_data <- subset(out_data,boundary/density > runif(nrow(out_data)))
     } else if (desired_samples < nrow(out_data)) {
-	# Need to find target density such there are approximately desired_samples
-	# remaining after downsampling. To do so we solve for the density such that
-	# the sum of samples below that density plus the expected value of
-	# samples retained above that density equals approximately the desired
-	# number of samples
-	density_s <- sort(density)
-	cdf       <- rev(cumsum(1.0/rev(density_s)))
-	targets   <- density_s*cdf+1:length(density)
-	boundary  <- ifelse(desired_samples<=targets[1], desired_samples/cdf[1], density_s[which.min(targets < desired_samples)])
-	out_data  <- subset(out_data,boundary/density > runif(length(density)))
+		# Need to find target density such there are approximately desired_samples
+		# remaining after downsampling. To do so we solve for the density such that
+		# the sum of samples below that density plus the expected value of
+		# samples retained above that density equals approximately the desired
+		# number of samples
+		density_s <- sort(density)
+		cdf       <- rev(cumsum(1.0/rev(density_s)))
+		
+		# Default solution if target density smaller than any present
+		boundary <- desired_samples/cdf[1] 
+		if (boundary > density_s[1]) {  # Boundary actually falls amongst densities present
+			targets <- (desired_samples-1:length(density_s)) / cdf 
+			boundary <- targets[which.min(targets-density_s > 0)]
+		}
+		out_data  <- subset(out_data,boundary/density > runif(length(density)))
     }
 
     out_frame <- flowFrame(out_data,params,description=description(in_fcs))
