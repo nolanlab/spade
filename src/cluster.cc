@@ -9,6 +9,7 @@
 #include <utility>
 #include <functional>
 #include <set>
+#include <queue>
 
 #ifdef HAVE_PARALLEL_STL
 #include <parallel/algorithm>
