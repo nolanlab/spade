@@ -6,9 +6,11 @@ FlowSPD.cluster <- function(tbl, k) {
 
     # Transpose table before call into row major order
     clust <- .Call("FSPD_cluster",t(tbl),as.integer(k))
-    
-    centers = c()
-    for (i in c(1:max(clust$assgn))) {
+  
+	# Invalid clusters have assgn == 0
+	centers = c()
+    is.na(clust$assgn) <- which(clust$assgn == 0)
+	for (i in c(1:max(clust$assgn, na.rm=TRUE))) {  
 		obs <- which(clust$assgn == i)
 		if (length(obs) > 1) {
 			centers <- rbind(centers,colMeans(tbl[obs,]))

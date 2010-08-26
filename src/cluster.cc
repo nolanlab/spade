@@ -68,8 +68,7 @@ namespace {
 
 	public:
 		Data_t* center;		// My cluster center
-		bool valid;		// Cluster statuses
-		bool merged;
+		bool valid, merged;  // Cluster statuses
 		const Data_t **members;	// Observations in my cluster
 		size_t num_members;
 
@@ -100,11 +99,13 @@ namespace {
 		bool get_merged() const { return merged; }
 		void set_merged(bool m) { merged = m; }
 
-		// Member iterators
-		typedef const Data_t** member_iterator;
+		// Member observations
+		size_t get_num_members() const { return num_members; }
 
+		typedef const Data_t** member_iterator;
 		member_iterator member_begin() const { return members; }
 		member_iterator member_end() const { return members + num_members; }
+
 
 		// Helper structs
 
@@ -188,20 +189,30 @@ namespace {
 		for (size_t i=0; i<obs; i++)  // Initialize clusters for row major data
 			c_beg[i].init_RM(&data[i*dim]);
 	
-		while (true) {
+		for (size_t round = 0; ; round++) {
+						
 			// Only looking at "valid" clusters
 			c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
-			
+						
+			// Hueristic to strip out singleton clusters
+			if (round == 5) {
+				for (ACluster *i=c_beg; i<c_end; i++)
+					if (i->get_num_members() == 1)
+						i->set_valid(false);
+				c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
+			}
+
+			// Stopping condition
 			size_t num_valid = c_end - c_beg;
 			if (num_valid < (size_t)(1.5 * k))
 				break;
 
-			{  // Order by cluster size to preferentially merge "small" clusters
-				ACluster::NMLT cmp;
+			if (round) {  // Clusters already initialized in "0" round
+				ACluster::NMLT cmp; // Order by cluster size to preferentially merge "small" clusters
 				std::sort(c_beg, c_end, cmp);
+				for (ACluster *i=c_beg; i<c_end; i++)  // Reset clusters for current merging round
+					i->reset_RM();	
 			}
-			for (ACluster *i=c_beg; i<c_end; i++)  // Reset for current merging round
-				i->reset_RM();	
 
 			size_t fold = std::max((size_t)1 /* 2x */, num_valid / 5000);
 			for (ACluster* into=c_beg; into < c_end; ++into) {
@@ -225,9 +236,8 @@ namespace {
 		Idx_t cur_Id = 1;  // Recall R is 1-indexed
 		c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
 		for (ACluster *i=c_beg; i<c_end; i++, cur_Id++) {
-			for (ACluster::member_iterator b=i->member_begin(), e=i->member_end(); b!=e; ++b) {
+			for (ACluster::member_iterator b=i->member_begin(), e=i->member_end(); b!=e; ++b)
 				assgn[(*b - data) / dim] = cur_Id;
-			}
 			i->destroy();
 		}	    
 	}
@@ -249,8 +259,10 @@ extern "C" {
 		SEXP ans, names, assgn; int n_protected = 0;
 
 		// Cluster and assign observations to clusters	
-		PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++; 	
-		cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, k_l, static_cast<Idx_t*>(INTEGER(assgn)));
+		PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++;
+		Idx_t* assgn_l = static_cast<Idx_t*>(INTEGER(assgn));
+		std::fill(assgn_l, assgn_l+obs, 0);
+		cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, k_l, assgn_l);
 
 		// Assemble return object
 		PROTECT(ans = allocVector(VECSXP,1)); n_protected++;
