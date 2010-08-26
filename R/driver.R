@@ -56,15 +56,13 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     }
 
     for (f in sampled_files) {
-	if (!is.null(reference_file) && f == reference_file)
-	    next
 
 	cat("Computing medians for file:",f,"\n")
 	a <- FlowSPD.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
 	g <- FlowSPD.annotateGraph(graph, layout=layout, a)
 	FlowSPD.write.graph(g, paste(f,".medians.gml",sep=""), format="gml")
 	
-	if (!is.null(reference_medians)) {
+	if (!is.null(reference_medians) && f != reference_file) {
 	    a <- FlowSPD.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
 	    # Not all files might have all clusters represented
 	    cc <- match(rownames(a$medians),rownames(reference_medians$medians))  # Common clusters
