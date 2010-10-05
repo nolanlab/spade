@@ -1,10 +1,10 @@
-FlowSPD.strip.sep <- function(name) {
+SPADE.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
 
-FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=FlowSPD.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000, k=200) {
+SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000, k=200) {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
+	files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
     }
     if (length(files) == 0) {
 	stop("No input files found")
@@ -16,7 +16,7 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     if (!file.info(out_dir)$isdir) {
 	stop(paste("out_dir:",out_dir,"is not a directory"))
     }
-    out_dir <- paste(FlowSPD.strip.sep(out_dir),.Platform$file,sep="")
+    out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
 
     density_files <- c()
     sampled_files <- c()
@@ -25,8 +25,8 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
 	f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
 	f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 	
-	FlowSPD.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
-	FlowSPD.downsampleFCS(f_density, f_sampled, desired_samples=downsampling_samples)
+	SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+	SPADE.downsampleFCS(f_density, f_sampled, desired_samples=downsampling_samples)
 	
 	density_files <- c(density_files, f_density)
 	sampled_files <- c(sampled_files, f_sampled)	
@@ -36,13 +36,13 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     cells_file <- paste(out_dir,"clusters.fcs",sep="")
     clust_file <- paste(out_dir,"clusters.table",sep="")
     graph_file <- paste(out_dir,"mst.gml",sep="")
-    FlowSPD.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, k=k)
+    SPADE.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, k=k)
 
     sampled_files <- c()
     for (f in density_files) {
 	cat("Upsampling file:",f,"\n")
 	f_sampled <- paste(f,".cluster.fcs",sep="")
-	FlowSPD.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+	SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
 	sampled_files <- c(sampled_files, f_sampled)
     }
 
@@ -52,23 +52,23 @@ FlowSPD.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_col
     reference_medians = NULL
     if (!is.null(reference_file)) {
 	reference_file <- paste(out_dir,reference_file,".density.fcs.cluster.fcs",sep="");
-	reference_medians <- FlowSPD.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
+	reference_medians <- SPADE.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
     }
 
     for (f in sampled_files) {
 
 	cat("Computing medians for file:",f,"\n")
-	a <- FlowSPD.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
-	g <- FlowSPD.annotateGraph(graph, layout=layout, a)
-	FlowSPD.write.graph(g, paste(f,".medians.gml",sep=""), format="gml")
+	a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+	g <- SPADE.annotateGraph(graph, layout=layout, a)
+	SPADE.write.graph(g, paste(f,".medians.gml",sep=""), format="gml")
 	
 	if (!is.null(reference_medians) && f != reference_file) {
-	    a <- FlowSPD.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
+	    a <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
 	    # Not all files might have all clusters represented
 	    cc <- match(rownames(a$medians),rownames(reference_medians$medians))  # Common clusters
 	    a <- list(count=a$count, fold=(a$medians-reference_medians$medians[cc,]))
-	    g <- FlowSPD.annotateGraph(graph, layout=layout, a)
-	    FlowSPD.write.graph(g, paste(f,".fold.gml",sep=""), format="gml")
+	    g <- SPADE.annotateGraph(graph, layout=layout, a)
+	    SPADE.write.graph(g, paste(f,".fold.gml",sep=""), format="gml")
 	}
     }
     
@@ -274,9 +274,9 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-FlowSPD.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=FlowSPD.layout.arch, attr_pattern="median|fold") {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold") {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(FlowSPD.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
+	files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
 
     out_dir_info <- file.info(out_dir)
@@ -286,7 +286,7 @@ FlowSPD.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=
     if (!file.info(out_dir)$isdir) {
 	stop(paste("out_dir:",out_dir,"is not a directory"))
     }
-    out_dir <- paste(FlowSPD.strip.sep(out_dir),.Platform$file,sep="")
+    out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     colorscale <- jet.colors(100)

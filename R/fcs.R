@@ -1,4 +1,4 @@
-FlowSPD.build.flowFrame <- function(x) {
+SPADE.build.flowFrame <- function(x) {
     if (!is.matrix(x)) {
 	stop("Input must be matrix")
     }

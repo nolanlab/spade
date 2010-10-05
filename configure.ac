@@ -1,4 +1,4 @@
-AC_INIT([flowSPD], 0.10)
+AC_INIT([spade], 0.10)
 
 # Find the compiler and compiler flags to use
 : ${R_HOME=`R RHOME`}

@@ -1,13 +1,13 @@
-\name{FlowSPD.driver}
-\alias{FlowSPD.driver}
+\name{SPADE.driver}
+\alias{SPADE.driver}
 \title{
-FlowSPD workflow driver
+SPADE workflow driver
 }
 \description{
-A function to drive the FlowSPD workflow. Produces graphs annoated with parameter medians and fold change.
+A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-FlowSPD.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = FlowSPD.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL, downsampling_samples=20000, k=200)
+SPADE.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = SPADE.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL, downsampling_samples=20000, k=200)
 }
 \arguments{
   \item{files}{

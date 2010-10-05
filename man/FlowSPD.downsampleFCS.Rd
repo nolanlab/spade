@@ -1,5 +1,5 @@
-\name{FlowSPD.downsampleFCS}
-\alias{FlowSPD.downsampleFCS}
+\name{SPADE.downsampleFCS}
+\alias{SPADE.downsampleFCS}
 \title{
 Downsample observcations in a FCS file according to density parameter
 }
@@ -9,7 +9,7 @@ density parameter. The goal is to produce a smaller set of observations with
 similar density. Downsampling is independent of how the density is modeled. 
 }
 \usage{
-FlowSPD.downsampleFCS(infilename, outfilename,
+SPADE.downsampleFCS(infilename, outfilename,
 		      exclude_pctile = 0.01, target_pctile = 0.05, 
 		      desired_samples = NULL)
 }
@@ -47,7 +47,7 @@ The name of the written file is returned
 Michael Linderman
 }
 \seealso{
-\code{\link{FlowSPD.addDensityToFCS}}
+\code{\link{SPADE.addDensityToFCS}}
 }
 %%\examples{
 %%}

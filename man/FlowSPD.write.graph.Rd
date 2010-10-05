@@ -1,5 +1,5 @@
-\name{FlowSPD.write.graph}
-\alias{FlowSPD.write.graph}
+\name{SPADE.write.graph}
+\alias{SPADE.write.graph}
 \title{
 Writing the graph to a file in some format
 }
@@ -7,7 +7,7 @@ Writing the graph to a file in some format
 General function for exporting graphs to foreign file formats, however at present only the GML format is implemented.
 }
 \usage{
-FlowSPD.write.graph(graph, file = "", format = c("gml"))
+SPADE.write.graph(graph, file = "", format = c("gml"))
 }
 \arguments{
   \item{graph}{

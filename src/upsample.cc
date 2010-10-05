@@ -51,7 +51,7 @@ namespace {
 extern "C" {
 
     SEXP
-    FSPD_assign(SEXP tbl, SEXP cluster_data, SEXP cluster_assign) {
+    SPADE_assign(SEXP tbl, SEXP cluster_data, SEXP cluster_assign) {
 	// tbl,clusters is column major order, transposed to be row major
 	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
 	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]),

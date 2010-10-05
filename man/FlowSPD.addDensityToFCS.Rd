@@ -1,5 +1,5 @@
-\name{FlowSPD.addDensityToFCS}
-\alias{FlowSPD.addDensityToFCS}
+\name{SPADE.addDensityToFCS}
+\alias{SPADE.addDensityToFCS}
 \title{
 Annotate FCS file with local density of each observation
 }
@@ -9,7 +9,7 @@ to the FCS file. The local density is modeled as an integer count of the number 
 observations within a specified distance of the observation.
 }
 \usage{
-FlowSPD.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = 5, kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000)
+SPADE.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = 5, kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000)
 }
 \arguments{
   \item{infilename}{

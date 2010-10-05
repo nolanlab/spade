@@ -1,8 +1,8 @@
 # Transpose data before call to put in row major order
-FlowSPD.assignToCluster <- function(tbl, cluster_data, cluster_assign)
-    .Call("FSPD_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
+SPADE.assignToCluster <- function(tbl, cluster_data, cluster_assign)
+    .Call("SPADE_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
 
-FlowSPD.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
+SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     cols=NULL, arcsinh_cofactor=5.0) {
 
     # Load in FCS file
@@ -30,7 +30,7 @@ FlowSPD.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     na.fail(c_idxs)
  
     # Assign observations to clusters
-    assign <- FlowSPD.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor), asinh(cluster_data[,c_idxs]/arcsinh_cofactor), cluster_data[,"cluster"])
+    assign <- SPADE.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor), asinh(cluster_data[,c_idxs]/arcsinh_cofactor), cluster_data[,"cluster"])
 
     # Reload FCS file without transformation, so it can be compactly rewritten...
     in_fcs <- read.FCS(infilename,transform=FALSE)

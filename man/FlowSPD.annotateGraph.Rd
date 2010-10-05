@@ -1,5 +1,5 @@
-\name{FlowSPD.annotateGraph}
-\alias{FlowSPD.annotateGraph}
+\name{SPADE.annotateGraph}
+\alias{SPADE.annotateGraph}
 \title{
 Add attributes to graph
 }
@@ -7,7 +7,7 @@ Add attributes to graph
 Add specific and arbitrary attributes to a graph
 }
 \usage{
-FlowSPD.annotateGraph(graph, layout = NULL, anno)
+SPADE.annotateGraph(graph, layout = NULL, anno)
 }
 \arguments{
   \item{graph}{

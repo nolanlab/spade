@@ -1,5 +1,5 @@
-\name{FlowSPD.FCSToTree}
-\alias{FlowSPD.FCSToTree}
+\name{SPADE.FCSToTree}
+\alias{SPADE.FCSToTree}
 \title{
 Cluster and build minimum spanning tree from data in FCS files 
 }
@@ -8,7 +8,7 @@ Hierarchically cluster observations in a set of FCS files and build a minimum
 spanning tree connecting those clusters.
 }
 \usage{
-FlowSPD.FCSToTree(infilenames, outfilename, graphfilename, clusterfilename,
+SPADE.FCSToTree(infilenames, outfilename, graphfilename, clusterfilename,
 		  cols = NULL, k = 200, arcsinh_cofactor = 5, 
 		  desired_samples = 50000)
 }
@@ -60,7 +60,7 @@ Underlying implementations have been parallelized with OpenMP. Set
 Implementation can be very memory intensive.
 }
 \seealso{
-\code{\link{FlowSPD.downsampleFCS}}
+\code{\link{SPADE.downsampleFCS}}
 }
 \examples{
 }

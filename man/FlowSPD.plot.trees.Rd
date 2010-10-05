@@ -1,5 +1,5 @@
-\name{FlowSPD.plot.trees}
-\alias{FlowSPD.plot.trees}
+\name{SPADE.plot.trees}
+\alias{SPADE.plot.trees}
 \title{
 Plot trees with annotated vertices
 }
@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-FlowSPD.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = FlowSPD.layout.arch, attr_pattern = "median|fold")
+SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold")
 }
 \arguments{
   \item{files}{

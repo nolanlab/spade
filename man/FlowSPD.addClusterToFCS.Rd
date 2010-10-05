@@ -1,5 +1,5 @@
-\name{FlowSPD.addClusterToFCS}
-\alias{FlowSPD.addClusterToFCS}
+\name{SPADE.addClusterToFCS}
+\alias{SPADE.addClusterToFCS}
 \title{
 Annotate observations in FCS file with cluster assignment
 }
@@ -7,7 +7,7 @@ Annotate observations in FCS file with cluster assignment
 Annotate observations in a FCS file with cluster assignment
 }
 \usage{
-FlowSPD.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = 5)
+SPADE.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = 5)
 }
 \arguments{
   \item{infilename}{
@@ -45,7 +45,7 @@ Underlying implementations have been parallelized with OpenMP. Set
 \code{OMP_NUM_THREADS} in environment to control the number of threads used.
 }
 \seealso{
-\code{\link{FlowSPD.FCSToTree}}
+\code{\link{SPADE.FCSToTree}}
 }
 \examples{
 }

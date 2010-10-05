@@ -4,7 +4,7 @@
 extern "C" {
 
     void
-    R_init_flowSPD(DllInfo *info) {
+    R_init_spade(DllInfo *info) {
 	static const R_CallMethodDef _CallFun[] = {
 	    {NULL}
 	};

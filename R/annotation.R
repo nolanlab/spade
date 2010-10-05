@@ -1,9 +1,9 @@
-FlowSPD.annotateMarkers <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
-    warning("Deprecated: Use FlowSPD.markerMedians instead")
-    FlowSPD.markerMedians(infilename, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
+SPADE.annotateMarkers <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
+    warning("Deprecated: Use SPADE.markerMedians instead")
+    SPADE.markerMedians(infilename, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-FlowSPD.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
+SPADE.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
 
     # Load in FCS file
     in_fcs  <- read.FCS(infilename);
@@ -49,7 +49,7 @@ FlowSPD.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
     list(count=count, medians=medians)
 }
 
-FlowSPD.layout.arch <-  function(mst_graph) {
+SPADE.layout.arch <-  function(mst_graph) {
     if (!is.igraph(mst_graph)) {
 	stop("Input has to be igraph object")
     }
@@ -118,7 +118,7 @@ FlowSPD.layout.arch <-  function(mst_graph) {
     v_pos
 }
 
-FlowSPD.annotateGraph <- function(graph, layout=NULL, anno) {
+SPADE.annotateGraph <- function(graph, layout=NULL, anno) {
     if (!is.igraph(graph)) {
 	stop("Not a graph object")
     }
@@ -147,7 +147,7 @@ FlowSPD.annotateGraph <- function(graph, layout=NULL, anno) {
     graph
 }
 
-FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
+SPADE.write.graph <- function(graph, file="", format = c("gml")) {
     if (!is.igraph(graph)) {
 	stop("Not a graph object")
     }
@@ -235,7 +235,7 @@ FlowSPD.write.graph <- function(graph, file="", format = c("gml")) {
     invisible(res)			
 }
 
-FlowSPD.layout.arch_layout <- function(mst_graph)  
+SPADE.layout.arch_layout <- function(mst_graph)  
 {
 	if (!is.igraph(mst_graph))
 	{

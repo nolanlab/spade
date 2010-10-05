@@ -5,9 +5,9 @@
 #$ -j y
 #$ -S /bin/bash
 #
-# Run end-to-end FlowSPD for a single FCS file 
+# Run end-to-end SPADE for a single FCS file 
 
-# Path to flowSPD package installation
+# Path to spade package installation
 PACKAGE=lib/
 # Path to temporary directory
 TMPDIR=/tmp/
@@ -21,12 +21,12 @@ GRAPHFILE=$1.gml
 CLUSTERFILE=$1.cluster
 OUTFILE=$1.clustered.fcs
 
-SCRIPT="library(\"flowSPD\",lib.loc=\"${PACKAGE}\");\
+SCRIPT="library(\"spade\",lib.loc=\"${PACKAGE}\");\
 cols<-c(${MARKERS});\
-FlowSPD.addDensityToFCS(\"${INFILE}\",\"${TMPDIR}${INFILE}.density.fcs\",cols=cols);\
-FlowSPD.downsampleFCS(\"${TMPDIR}${INFILE}.density.fcs\",\"${TMPDIR}${INFILE}.downsample.fcs\");\
-FlowSPD.FCSToTree(c(\"${TMPDIR}${INFILE}.downsample.fcs\"),\"${GRAPHFILE}\",\"${CLUSTERFILE}\",cols=cols);\
-FlowSPD.addClusterToFCS(\"${TMPDIR}${INFILE}.density.fcs\",\"${OUTFILE}\",\"${CLUSTERFILE}\",cols=cols);"
+SPADE.addDensityToFCS(\"${INFILE}\",\"${TMPDIR}${INFILE}.density.fcs\",cols=cols);\
+SPADE.downsampleFCS(\"${TMPDIR}${INFILE}.density.fcs\",\"${TMPDIR}${INFILE}.downsample.fcs\");\
+SPADE.FCSToTree(c(\"${TMPDIR}${INFILE}.downsample.fcs\"),\"${GRAPHFILE}\",\"${CLUSTERFILE}\",cols=cols);\
+SPADE.addClusterToFCS(\"${TMPDIR}${INFILE}.density.fcs\",\"${OUTFILE}\",\"${CLUSTERFILE}\",cols=cols);"
 
 R -e "$SCRIPT"
 

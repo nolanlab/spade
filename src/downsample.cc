@@ -93,7 +93,7 @@ namespace {
 extern "C" {
 
     SEXP 
-    FSPD_density(SEXP tbl, SEXP kernel_mult, SEXP apprx_mult, SEXP med_samples) {
+    SPADE_density(SEXP tbl, SEXP kernel_mult, SEXP apprx_mult, SEXP med_samples) {
 	// tbl is column major order, transposed to be row major
 	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
 	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);

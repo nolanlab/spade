@@ -1,18 +1,18 @@
-useDynLib(flowSPD)
+useDynLib(spade)
 export(
-    "FlowSPD.density",
-    "FlowSPD.addDensityToFCS",
-    "FlowSPD.downsampleFCS",
-    "FlowSPD.cluster",
-    "FlowSPD.FCSToTree",
-    "FlowSPD.assignToCluster",
-    "FlowSPD.addClusterToFCS",
-    "FlowSPD.annotateMarkers",
-    "FlowSPD.markerMedians",
-    "FlowSPD.layout.arch",
-    "FlowSPD.write.graph",
-    "FlowSPD.layout.arch_layout",
-    "FlowSPD.annotateGraph",
-    "FlowSPD.driver",
-    "FlowSPD.plot.trees"
+    "SPADE.density",
+    "SPADE.addDensityToFCS",
+    "SPADE.downsampleFCS",
+    "SPADE.cluster",
+    "SPADE.FCSToTree",
+    "SPADE.assignToCluster",
+    "SPADE.addClusterToFCS",
+    "SPADE.annotateMarkers",
+    "SPADE.markerMedians",
+    "SPADE.layout.arch",
+    "SPADE.write.graph",
+    "SPADE.layout.arch_layout",
+    "SPADE.annotateGraph",
+    "SPADE.driver",
+    "SPADE.plot.trees"
 )

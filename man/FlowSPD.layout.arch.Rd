@@ -1,6 +1,6 @@
-\name{FlowSPD.layout.arch}
-\alias{FlowSPD.layout.arch}
-\alias{FlowSPD.layout.arch_layout}
+\name{SPADE.layout.arch}
+\alias{SPADE.layout.arch}
+\alias{SPADE.layout.arch_layout}
 \title{
 Generate coordinates for plotting graphs
 }
@@ -8,8 +8,8 @@ Generate coordinates for plotting graphs
 Performing "arch" layouts of graph vertices
 }
 \usage{
-FlowSPD.layout.arch(mst_graph)
-FlowSPD.layout.arch_layout(mst_graph)
+SPADE.layout.arch(mst_graph)
+SPADE.layout.arch_layout(mst_graph)
 }
 \arguments{
   \item{mst_graph}{
@@ -39,7 +39,7 @@ Michael Linderman
 \note{
 }
 \seealso{
-\code{\link{FlowSPD.annotateGraph}}
+\code{\link{SPADE.annotateGraph}}
 }
 \examples{
 }

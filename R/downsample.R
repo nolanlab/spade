@@ -1,8 +1,8 @@
 # Transpose table before call to put in row major order
-FlowSPD.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000)
-    .Call("FSPD_density",t(tbl),kernel_mult,apprx_mult,med_samples)
+SPADE.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000)
+    .Call("SPADE_density",t(tbl),kernel_mult,apprx_mult,med_samples)
 
-FlowSPD.addDensityToFCS <- function(infilename, outfilename, 
+SPADE.addDensityToFCS <- function(infilename, outfilename, 
     cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000) {
 
     # Load in FCS file
@@ -22,7 +22,7 @@ FlowSPD.addDensityToFCS <- function(infilename, outfilename,
     }
 
     # Compute the density
-    density <- FlowSPD.density(	asinh(in_data[,idxs]/arcsinh_cofactor),
+    density <- SPADE.density(	asinh(in_data[,idxs]/arcsinh_cofactor),
 				kernel_mult=kernel_mult,apprx_mult=apprx_mult,med_samples=med_samples);
 
 
@@ -57,7 +57,7 @@ FlowSPD.addDensityToFCS <- function(infilename, outfilename,
     write.FCS(out_frame,outfilename);
 }
 
-FlowSPD.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL) {
+SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL) {
     # Load in FCS file
     in_fcs  <- read.FCS(infilename,transform=FALSE);
     in_data <- exprs(in_fcs);
