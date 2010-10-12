@@ -1,0 +1,4 @@
+#!/bin/sh
+
+mkdir -p $R_PACKAGE_DIR/libs
+cp inst/windows/*.dll $R_PACKAGE_DIR/libs
