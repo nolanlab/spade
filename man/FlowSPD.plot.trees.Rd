@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold")
+SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold", pctile_keep=c(0.02,0.98), normalize=NULL)
 }
 \arguments{
   \item{files}{
@@ -25,6 +25,12 @@ Either a function or a numeric matrix specifying how vertices are placed on plot
   \item{attr_pattern}{
 A regular expression that matches the attributes that should be plotted for each graph.
 }
+  \item{pctile_keep}{
+	  A two element vector specify lower and upper percentiles beyond which attribute values should be discarded.
+  }
+  \item{normalize}{
+	  One of NULL or 'local'. If 'local', attributes are normalized on a per-file, per-attribute basis into the range [-1,1] with zero remaining zero (e.g., [-5,10] will normalize to [-.5,1]).
+  }
 }
 \details{
 }

@@ -274,57 +274,78 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold") {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_keep=c(0.02,0.98), normalize=NULL) {
     if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
+		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
 
     out_dir_info <- file.info(out_dir)
     if (is.na(out_dir_info$isdir)) {
-	dir.create(out_dir)
+		dir.create(out_dir)
     }
     if (!file.info(out_dir)$isdir) {
-	stop(paste("out_dir:",out_dir,"is not a directory"))
+		stop(paste("out_dir:",out_dir,"is not a directory"))
     }
     out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
+
+	if (!is.vector(pctile_keep) || length(pctile_keep) != 2) {
+		stop("pctile_keep must be a two element vector with values in [0,1]")
+	}
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     colorscale <- jet.colors(100)
 
     for (f in files) {
-	graph <- read.graph(f, format="gml")
-	attrs <- list.vertex.attributes(graph)
+		graph <- read.graph(f, format="gml")
+		attrs <- list.vertex.attributes(graph)
 
-	if (is.function(layout))
-	    graph_l <- layout(graph)
-	else
-	    graph_l <- layout	
+		if (is.function(layout))
+			graph_l <- layout(graph)
+		else
+			graph_l <- layout	
 
-	vsize <- V(graph)$count
-	vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
-	vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
-	vsize[is.na(vsize)] <- 1
+		vsize <- V(graph)$count
+		vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
+		vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
+		vsize[is.na(vsize)] <- 1
 
-	for (i in grep(attr_pattern, attrs)) {
-	    # Compute the color for each vertex using color gradient
-	    attr <- get.vertex.attribute(graph,attrs[i])
-	    attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+		for (i in grep(attr_pattern, attrs)) {
+			# Compute the color for each vertex using color gradient
+			attr <- get.vertex.attribute(graph,attrs[i])
+			
+			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+			boundary <- quantile(attr, probs=pctile_keep, na.rm=TRUE)  # Trim outliers
+			attr[attr < boundary[1] | attr > boundary[2]] <- NA
+
+			if (is.null(normalize)) {
+				grad <- seq(min(attr,na.rm=TRUE),max(attr,na.rm=TRUE),length.out=length(colorscale))
+			} else if (normalize == 'local') {
+				attr <- scale(attr, center=0.0, scale=max(abs(range(attr,na.rm=TRUE))))
+				grad <- seq(-1.0, 1.0, length.out=length(colorscale))
+			} else {
+				stop("normalize must be null or 'local'")
+			}
+
+			color <- colorscale[findInterval(attr, grad)]
+			color[is.na(attr)] <- "grey"
+			V(graph)$color <- color
 	    
-	    grad <- seq(min(attr,na.rm=TRUE),max(attr,na.rm=TRUE),length.out=length(colorscale))
-	    color <- colorscale[findInterval(attr, grad)]
-	    color[is.na(attr)] <- "grey"
-	    V(graph)$color <- color
+			# Plot the tree, with legend showing the gradient
+			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
 	    
-	    # Plot the tree, with legend showing the gradient
-	    pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
+			plot(graph, layout=graph_l, 
+				vertex.shape="csquare", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
+			title(main=attrs[i])
+			subplot(
+				image(
+					grad,c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,
+					xlab="",ylab="",yaxt="n",xaxp=c(round(range(grad),2),1)
+				),
+				x="right,bottom",size=c(1,.20)
+			)
 	    
-	    plot(graph, layout=graph_l, vertex.shape="csquare", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA)
-	    
-	    title(main=attrs[i])
-	    subplot(image(grad,c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,xlab="",ylab="",yaxt="n",xaxp=c(round(min(attr,na.rm=TRUE),2),round(max(attr,na.rm=TRUE),2),1)),x="right,bottom",size=c(1,.20))
-	    
-	    dev.off()
-	}
+			dev.off()
+		}
     }
 
 }

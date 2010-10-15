@@ -118,31 +118,34 @@ SPADE.layout.arch <-  function(mst_graph) {
     v_pos
 }
 
-SPADE.annotateGraph <- function(graph, layout=NULL, anno) {
+SPADE.annotateGraph <- function(graph, layout=NULL, anno=NULL) {
     if (!is.igraph(graph)) {
-	stop("Not a graph object")
+		stop("Not a graph object")
     }
 
     if (!is.null(layout) && is.matrix(layout)) {
-	if (nrow(layout) != vcount(graph) || ncol(layout) != 2) {
-	    stop("Ill-formated layout matrix, must 2 columns (x,y) and as many rows as vertices")
-	}
-	graph <- set.vertex.attribute(graph, "graphics.x", value=layout[,1])
-	graph <- set.vertex.attribute(graph, "graphics.y", value=layout[,2])
+		if (nrow(layout) != vcount(graph) || ncol(layout) != 2) {
+			stop("Ill-formated layout matrix, must 2 columns (x,y) and as many rows as vertices")
+		}
+		graph <- set.vertex.attribute(graph, "graphics.x", value=layout[,1])
+		graph <- set.vertex.attribute(graph, "graphics.y", value=layout[,2])
     }
 
-    if (!is.list(anno)) {
-	stop("anno must be a list with named entries");
+	if (is.null(anno)) {
+		return(graph)
+    } else if (!is.list(anno)) {
+		stop("anno must be a list with named entries");
     }
-    for (i in 1:length(anno)) {
-	l <- anno[[i]]
-	if (!is.matrix(l)) {
-	    stop(paste("Argument:",quote(l),"must be a matrix"))
-	}
-	vt <- V(graph)[match(rownames(l),V(graph)$name)-1]  # Vertex IDS are 0 indexed
-	for (c in colnames(l)) {
-	    graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),index=vt, value=l[,c])
-	}
+    
+	for (i in seq_len(length(anno))) {
+		l <- anno[[i]]
+		if (!is.matrix(l)) {
+			stop(paste("Argument:",quote(l),"must be a matrix"))
+		}
+		vt <- V(graph)[match(rownames(l),V(graph)$name)-1]  # Vertex IDS are 0 indexed
+		for (c in colnames(l)) {
+			graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),index=vt, value=l[,c])
+		}
     }
     graph
 }
