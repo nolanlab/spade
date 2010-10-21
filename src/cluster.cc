@@ -45,19 +45,20 @@ namespace {
 		};
 		std::priority_queue<Value_t,std::vector<Value_t>,CMP> Q;
 		
-		Dist_t MMD;  // Minimum merged distance
+		Dist_t MMD;  // Minimum merged distance (distance to nearest already merged neighbor)
 		size_t Fold;
 
 		PQ(size_t fold) : MMD(std::numeric_limits<Dist_t>::max()), Fold(fold) {}
-
+	
 		bool empty() const { return Q.empty(); }
 
 		void normalize();	
 
 		void push(ACluster* c, Dist_t d);    
-		
-		ACluster* top() const { return Q.top().first; }
-		void pop() { Q.pop(); }
+		void push(PQ& pq);
+
+		ACluster* furthestCluster() const { return Q.top().first; }
+		void popFurthest() { Q.pop(); }
 	};
 
     /* Maintain state for a single cluster
@@ -137,12 +138,15 @@ namespace {
 		}
 
 		void merge_in_pq(PQ& pq) {
+			// Discard all potential merges further than nearest neighbor that
+			// has already been merged in this round
 			pq.normalize();
+
 			while (!pq.empty()) {
-				ACluster& rhs = *pq.top();
+				ACluster& rhs = *pq.furthestCluster();
 				if (!rhs.get_merged())
 					this->merge_in(rhs);
-				pq.pop();
+				pq.popFurthest();
 			}
 		}
 
@@ -180,6 +184,13 @@ namespace {
 		}
 	}
 
+	void PQ::push(PQ& pq) {
+		MMD = std::min(MMD, pq.MMD);	
+		while (!pq.Q.empty()) {
+			this->push(pq.Q.top().first, pq.Q.top().second);
+			pq.Q.pop();
+		}
+	}
 	
 	void
     cluster(const Data_t* data, size_t obs, size_t dim, size_t k, Idx_t* assgn) {
@@ -221,11 +232,22 @@ namespace {
 					continue;
 				into->set_merged(true);
 
-				// Scan all "valid" clusters to fill in queue of nearest neighbors 
 				PQ pq(fold);
-				for (ACluster* from=c_beg; from < c_end; ++from) {
-					if (into != from)
-						into->push_on_pq(from, pq);
+				#pragma omp parallel shared(c_beg, c_end, into)
+				{
+					// Scan all "valid" clusters to fill in queue of nearest neighbors 
+					PQ pq_p(fold);  // "private" priority queue
+					
+					#pragma omp for nowait
+					for (ACluster* from=c_beg; from < c_end; ++from) {
+						if (into != from)
+							into->push_on_pq(from, pq_p);
+					}
+
+					#pragma omp critical
+					{
+						pq.push(pq_p);
+					}
 				}
 
 				// Merge in clusters in queue
