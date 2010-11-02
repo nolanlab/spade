@@ -1,6 +1,6 @@
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.0 - August 2, 2010
+# Version 2.1 - November 1, 2010
 #
 # Command line instructions:
 #   1) Customize the parameters that are CAPITALIZED below 
@@ -46,12 +46,16 @@ OUTPUT_DIR="output/"
 # Path to temporary directory -- you probably don't need to change this.
 TMPDIR="/tmp/"
 
+# Set this to the number of cores/threads to use.
+NUM_THREADS=1
 
 ###################  No need to modify anything below this point ########################
 
 #Run SPADE analysis workflow
 
 args = commandArgs();
+
+system(paste("export OMP_NUM_THREADS=",NUM_THREADS,sep=""))
 
 library("spade",lib.loc=LIBRARY_PATH)
 
