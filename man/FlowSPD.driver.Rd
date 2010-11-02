@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern = "*.fcs", out_dir = ".", cluster_cols = NULL, arcsinh_cofactor = 5, layout = SPADE.layout.arch, median_cols = NULL, reference_file = NULL, fold_cols = NULL, downsampling_samples=20000, k=200)
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000) 
 }
 \arguments{
   \item{files}{
@@ -31,8 +31,8 @@ Layout function
   \item{median_cols}{
 Similar to \code{cluster_cols}, specifies columns for which to calculate medians. MST graphs are annotated with medians.
 }
-  \item{reference_file}{
-Reference FCS file to use in calculating the fold change. 
+  \item{reference_files}{
+Vector of reference FCS files to use in calculating the fold change. When multiple reference files are used, the fold change relative to those different files will be averaged. 
 }
   \item{fold_cols}{
 Similar to \code{cluster_cols}, specifies columns for which to calculate fold change. MST graphs are annotated with fold change.
@@ -40,8 +40,17 @@ Similar to \code{cluster_cols}, specifies columns for which to calculate fold ch
   \item{downsampling_samples}{
 Desired number of samples remaining after downsampling files
 }
+  \item{downsampling_exclude_pctile}{
+Numeric value in [0,1]. Densities below this percentile will be excluded during downsampling.
+}
+  \item{downsampling_target_pctile}{
+Numeric value in [0,1]. Densities below this percentile, but above ‘exclude_pctile’ will be retained during downsampling. Only meaningful if ‘downsampling_samples’ is ‘NULL’.
+}
   \item{k}{
 Desirec number of clusters. Algorithm might create between [k/2,3k/2] clusters.
+}
+  \item{clustering_samples}{
+Desired number of samples to be used in clustering.
 }
 }
 \details{

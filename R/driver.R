@@ -2,77 +2,99 @@ SPADE.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
 
-SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_file = NULL, fold_cols=NULL, downsampling_samples=20000, k=200) {
-    if (length(files) == 1 && file.info(files)$isdir) {
-	files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
-    }
-    if (length(files) == 0) {
-	stop("No input files found")
-    } 
-    out_dir_info <- file.info(out_dir)
-    if (is.na(out_dir_info$isdir)) {
-	dir.create(out_dir)
-    }
-    if (!file.info(out_dir)$isdir) {
-	stop(paste("out_dir:",out_dir,"is not a directory"))
-    }
-    out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
-
-    density_files <- c()
-    sampled_files <- c()
-    for (f in files) {
-	cat("Downsampling file:",f,"\n")
-	f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
-	f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
-	
-	SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
-	SPADE.downsampleFCS(f_density, f_sampled, desired_samples=downsampling_samples)
-	
-	density_files <- c(density_files, f_density)
-	sampled_files <- c(sampled_files, f_sampled)	
-    }
-    
-    cat("Clustering files...\n")
-    cells_file <- paste(out_dir,"clusters.fcs",sep="")
-    clust_file <- paste(out_dir,"clusters.table",sep="")
-    graph_file <- paste(out_dir,"mst.gml",sep="")
-    SPADE.FCSToTree(sampled_files, cells_file, graph_file, clust_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, k=k)
-
-    sampled_files <- c()
-    for (f in density_files) {
-	cat("Upsampling file:",f,"\n")
-	f_sampled <- paste(f,".cluster.fcs",sep="")
-	SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
-	sampled_files <- c(sampled_files, f_sampled)
-    }
-
-    graph  <- read.graph(graph_file, format="gml")
-    layout <- layout(graph)
-    
-    reference_medians = NULL
-    if (!is.null(reference_file)) {
-	reference_file <- paste(out_dir,reference_file,".density.fcs.cluster.fcs",sep="");
-	reference_medians <- SPADE.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
-    }
-
-    for (f in sampled_files) {
-
-	cat("Computing medians for file:",f,"\n")
-	a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
-	g <- SPADE.annotateGraph(graph, layout=layout, a)
-	SPADE.write.graph(g, paste(f,".medians.gml",sep=""), format="gml")
-	
-	if (!is.null(reference_medians) && f != reference_file) {
-	    a <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
-	    # Not all files might have all clusters represented
-	    cc <- match(rownames(a$medians),rownames(reference_medians$medians))  # Common clusters
-	    a <- list(count=a$count, fold=(a$medians-reference_medians$medians[cc,]))
-	    g <- SPADE.annotateGraph(graph, layout=layout, a)
-	    SPADE.write.graph(g, paste(f,".fold.gml",sep=""), format="gml")
+SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000) {
+	if (length(files) == 1 && file.info(files)$isdir) {
+		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
 	}
-    }
-    
-    invisible(NULL)
+	if (length(files) == 0) {
+		stop("No input files found")
+	} 
+	out_dir_info <- file.info(out_dir)
+		if (is.na(out_dir_info$isdir)) {
+			dir.create(out_dir)
+		}
+	if (!file.info(out_dir)$isdir) {
+		stop(paste("out_dir:",out_dir,"is not a directory"))
+	}
+	out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
+
+	density_files <- c()
+	sampled_files <- c()
+	for (f in files) {
+		cat("Downsampling file:",f,"\n")
+		f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
+		f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
+
+		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+		SPADE.downsampleFCS(f_density, f_sampled, 
+							exclude_pctile=downsampling_exclude_pctile,
+							target_pctile=downsampling_target_pctile,
+							desired_samples=downsampling_samples)
+
+		density_files <- c(density_files, f_density)
+		sampled_files <- c(sampled_files, f_sampled)	
+	}
+
+	cat("Clustering files...\n")
+	cells_file <- paste(out_dir,"clusters.fcs",sep="")
+	clust_file <- paste(out_dir,"clusters.table",sep="")
+	graph_file <- paste(out_dir,"mst.gml",sep="")
+	SPADE.FCSToTree(sampled_files, cells_file, graph_file, clust_file, 
+					cols=cluster_cols, 
+					arcsinh_cofactor=arcsinh_cofactor, 
+					k=k, 
+					desired_samples=clustering_samples)
+
+	sampled_files <- c()
+	for (f in density_files) {
+		cat("Upsampling file:",f,"\n")
+		f_sampled <- paste(f,".cluster.fcs",sep="")
+		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+		sampled_files <- c(sampled_files, f_sampled)
+	}
+
+	graph  <- read.graph(graph_file, format="gml")
+	layout <- layout(graph)
+
+	reference_medians = NULL
+	if (!is.null(reference_files)) {
+		reference_medians <- vector("list",length(reference_files))
+		reference_files <- as.vector(reference_files)  # Coerce to vector, if not already
+		for (i in seq_along(reference_files)) {	
+			reference_file <- paste(out_dir,reference_files[i],".density.fcs.cluster.fcs",sep="");
+			reference_medians[[i]] <- SPADE.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
+		}
+	}
+
+	for (f in sampled_files) {
+
+		cat("Computing medians for file:",f,"\n")
+		a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".medians.gml",sep=""), format="gml")
+
+		if (!is.null(reference_medians)) {			
+			a <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
+
+			# Maintain accumulators for averaging across reference files
+			cnt <- matrix(0, nrow=nrow(a$medians), ncol=1, dimnames=list(rownames(a$medians),"count"))
+			acc <- matrix(0, nrow=nrow(a$medians), ncol=ncol(a$medians), dimnames=dimnames(a$medians))
+			
+			# Compute the fold change compared to all reference files
+			for (i in seq_along(reference_files)) {
+				# Not all files might have all clusters represented
+				cc <- rownames(a$medians)[!is.na(match(rownames(a$medians),rownames(reference_medians[[i]]$medians)))]  # Common clusters
+				cnt[cc,1] <- cnt[cc,1] + 1
+				acc[cc,]  <- acc[cc,] + (a$medians[cc,] - reference_medians[[i]]$medians[cc,])
+			}
+			cnt <- subset(cnt, cnt[,1] > 0)
+			acc <- acc[rownames(cnt),] / cnt[,rep(1,ncol(acc))] 		
+
+			a <- list(count=a$count, fold=acc)	
+			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".fold.gml",sep=""), format="gml")
+		}
+	}
+
+	invisible(NULL)
 }
 
 # The following functions are copied from the TeachingDemos package, 
