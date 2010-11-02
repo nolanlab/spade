@@ -5,12 +5,38 @@ SPADE.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000
 SPADE.addDensityToFCS <- function(infilename, outfilename, 
     cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000) {
 
+	# region Checking and repairing files missing null descs
     # Load in FCS file
     in_fcs  <- read.FCS(infilename);
-    in_data <- exprs(in_fcs);
-
     params <- parameters(in_fcs);
     pd     <- pData(params);
+
+    keyval <- list();
+
+    # Replace any null descs with names (for FSC-A, FSC-W, SSC-A)
+    for(i in 1:length(params$name))
+    {
+     if(is.na(pd[i,2]))
+     {
+      #probably only keyval is necessary...
+      pd[i,2]<- toString(pd[i,1])
+      keyval[[paste("$P",i,"S",sep="")]] <- toString(pd[i,1])
+     }
+    }
+
+    pData(params) <- pd;
+
+    out_frame<-flowFrame(exprs(in_fcs),params,description=description(in_fcs));
+    keyword(out_frame)<-keyval;
+    write.FCS(out_frame,outfilename); #using outfilename as a sort of buffer
+	#endregion
+
+    # Load in the preprocessed FCS file
+    in_fcs  <- read.FCS(outfilename);
+    in_data <- exprs(in_fcs);
+    params <- parameters(in_fcs);
+    pd     <- pData(params);
+
 
     # Select out the desired columns
     if (is.null(cols)) {
@@ -36,6 +62,7 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
     channel_name   <- "density";
     channel_range  <- max(density)+1;
 
+
     plist <- matrix(c(channel_name,channel_name,channel_range,0,channel_range-1));
     rownames(plist) <- c("name","desc","range","minRange","maxRange");
     colnames(plist) <- c(channel_id);
@@ -46,7 +73,7 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
     out_data <- cbind(in_data,"density"=density);
     out_frame <- flowFrame(out_data,params,description=description(in_fcs));
 
-    keyval <- list();
+    #keyval still contains the keys from preprocessing that accomodates description-list params
     keyval[[paste("$P",channel_number,"B",sep="")]] <- "32";			# Number of bits
     keyval[[paste("$P",channel_number,"R",sep="")]] <- toString(channel_range); # Range
     keyval[[paste("$P",channel_number,"E",sep="")]] <- "0,0";			# Exponent
