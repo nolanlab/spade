@@ -1,50 +1,62 @@
-SPADE.annotateMarkers <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
+SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
     warning("Deprecated: Use SPADE.markerMedians instead")
-    SPADE.markerMedians(infilename, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
+    SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-SPADE.markerMedians <- function(infilename, cols=NULL, arcsinh_cofactor=5.0) {
+SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
 
-    # Load in FCS file
-    in_fcs  <- read.FCS(infilename);
-    in_data <- exprs(in_fcs);
+	data  <- c()
+	c_ids <- c()
 
-    params <- parameters(in_fcs);
-    pd     <- pData(params);
+	files <- as.vector(files)
+	for (f in files) {
+		# Load in FCS file
+		in_fcs  <- read.FCS(f);
+		in_data <- exprs(in_fcs);
 
-    # Find cluster column
-    c_idx <- match("cluster",pd$desc)
-    if (any(is.na(c_idx))) {
-	stop("No cluster parameter in FCS file")
-    }
-    c_asn <- in_data[,c_idx]
-    c_ids <- sort(unique(c_asn)) # Used cluster indices
+		params <- parameters(in_fcs);
+		pd     <- pData(params);
 
-    # Select out the desired columns
-    if (is.null(cols)) {
-	cols <- as.vector(pd$desc) 
-    }
-    idxs <- match(cols,pd$desc)
-    if (any(is.na(idxs))) { 
-	stop("Invalid column specifier") 
-    }
-    idxs <- subset(idxs, idxs != c_idx)  # Strip out cluster column
-    data_c <- in_data[,idxs]             # Select out data columns    
+		# Find cluster column
+		c_idx <- match("cluster",pd$desc)
+		if (any(is.na(c_idx))) {
+			stop("No cluster parameter in FCS file")
+		}
+		c_asn <- in_data[,c_idx]
+		c_ids <- sort(union(c_ids, unique(c_asn))) # Used cluster indices
 
-    count  <- c()
-    medians <- c()
-   
-    for (i in c_ids) {
-	data_s <- asinh(subset(data_c, c_asn == i) / arcsinh_cofactor)
-	
-	count   <- rbind(count, nrow(data_s))
-	medians <- rbind(medians, apply(data_s, 2, median))
-    }
- 
-    colnames(count)  <- c("count")
-    rownames(count)  <- c_ids
-    colnames(medians) <- pd$desc[idxs]
-    rownames(medians) <- c_ids
+		# Select out the desired columns
+		if (is.null(cols)) {
+			cols <- as.vector(pd$desc) 
+		}
+		idxs <- match(cols,pd$desc)
+		if (any(is.na(idxs))) { 
+			stop("Invalid column specifier") 
+		}
+		idxs <- subset(idxs, idxs != c_idx)  # Strip out cluster column
+		
+		data <- rbind(data, in_data[, idxs])
+		if (is.null(colnames(data))) {
+			colnames(data) <- pd$desc[idxs]
+		}
+		if (!setequal(colnames(data),pd$desc[idxs])) {
+			stop("Files have different columns")
+		}
+	}
+	   
+	count  <- c()
+	medians <- c()
+
+	for (i in c_ids) {
+		data_s  <- asinh(subset(data, c_asn == i) / arcsinh_cofactor)
+		count   <- rbind(count, nrow(data_s))
+		medians <- rbind(medians, apply(data_s, 2, median))
+	}
+
+	colnames(count)   <- c("count")
+	rownames(count)   <- c_ids
+	colnames(medians) <- colnames(data)
+	rownames(medians) <- c_ids
 
     list(count=count, medians=medians)
 }

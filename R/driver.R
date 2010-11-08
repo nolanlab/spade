@@ -56,14 +56,10 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	graph  <- read.graph(graph_file, format="gml")
 	layout <- layout(graph)
 
-	reference_medians = NULL
+	reference_medians <- NULL
 	if (!is.null(reference_files)) {
-		reference_medians <- vector("list",length(reference_files))
-		reference_files <- as.vector(reference_files)  # Coerce to vector, if not already
-		for (i in seq_along(reference_files)) {	
-			reference_file <- paste(out_dir,reference_files[i],".density.fcs.cluster.fcs",sep="");
-			reference_medians[[i]] <- SPADE.markerMedians(reference_file, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
-		}
+		reference_files   <- sapply(as.vector(reference_files), function(rf) { paste(out_dir, rf, ".density.fcs.cluster.fcs",sep=""); })
+		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
 	}
 
 	for (f in sampled_files) {
@@ -73,23 +69,15 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 
 		if (!is.null(reference_medians)) {			
+			cat("Computing fold change for file:",f,"\n")
 			a <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
-
-			# Maintain accumulators for averaging across reference files
-			cnt <- matrix(0, nrow=nrow(a$medians), ncol=1, dimnames=list(rownames(a$medians),"count"))
-			acc <- matrix(0, nrow=nrow(a$medians), ncol=ncol(a$medians), dimnames=dimnames(a$medians))
 			
-			# Compute the fold change compared to all reference files
-			for (i in seq_along(reference_files)) {
-				# Not all files might have all clusters represented
-				cc <- rownames(a$medians)[!is.na(match(rownames(a$medians),rownames(reference_medians[[i]]$medians)))]  # Common clusters
-				cnt[cc,1] <- cnt[cc,1] + 1
-				acc[cc,]  <- acc[cc,] + (a$medians[cc,] - reference_medians[[i]]$medians[cc,])
-			}
-			cnt <- subset(cnt, cnt[,1] > 0)
-			acc <- acc[rownames(cnt),] / cnt[,rep(1,ncol(acc))] 		
-
-			a <- list(count=a$count, fold=acc)	
+			# Compute the fold change compared to reference medians
+			cc <- rownames(a$medians)[!is.na(match(rownames(a$medians),rownames(reference_medians$medians)))]  # Common clusters
+			fold <- a$medians[cc,] - reference_medians$medians[cc,]
+			dimnames(fold) <- list(cc, colnames(a$medians))
+					
+			a <- list(count=a$count, fold=fold)	
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".fold.gml",sep=""), format="gml")
 		}
 	}

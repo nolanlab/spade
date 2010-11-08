@@ -1,3 +1,24 @@
+SPADE.read.FCS <- function(file, transform=TRUE) {
+	fcs <- read.FCS(file, transform=transform)
+	params <- parameters(fcs)
+	pd <- pData(params)
+
+	# Replace any null descs with names (for FSC-A, FSC-W, SSC-A)
+    if (any(is.na(pd$desc))) {
+		keyval <- list()
+		for (i in seq_len(nrow(pd))) {
+			if (is.na(pd$desc[i])) {
+				pd$desc[i] <- pd$name[i]
+				keyval[[paste("$P",i,"S",sep="")]] <- pd$name[i]
+			}
+		}
+		pData(params) <- pd;
+		fcs <- flowFrame(exprs(fcs),params,description=description(fcs));
+		keyword(fcs) <- keyval
+	}
+	fcs
+}
+
 SPADE.build.flowFrame <- function(x) {
     if (!is.matrix(x)) {
 	stop("Input must be matrix")

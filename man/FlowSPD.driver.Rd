@@ -32,7 +32,7 @@ Layout function
 Similar to \code{cluster_cols}, specifies columns for which to calculate medians. MST graphs are annotated with medians.
 }
   \item{reference_files}{
-Vector of reference FCS files to use in calculating the fold change. When multiple reference files are used, the fold change relative to those different files will be averaged. 
+Vector of reference FCS files to use in calculating the fold change. When multiple reference files are used, the observations in those files are concatenated prior to computing the reference medians. 
 }
   \item{fold_cols}{
 Similar to \code{cluster_cols}, specifies columns for which to calculate fold change. MST graphs are annotated with fold change.

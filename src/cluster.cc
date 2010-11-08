@@ -237,9 +237,10 @@ namespace {
 				{
 					// Scan all "valid" clusters to fill in queue of nearest neighbors 
 					PQ pq_p(fold);  // "private" priority queue
-					
+				
 					#pragma omp for nowait
-					for (ACluster* from=c_beg; from < c_end; ++from) {
+					for (size_t i=0; i < (c_end - c_beg); i++) {
+						ACluster* from = c_beg + i;
 						if (into != from)
 							into->push_on_pq(from, pq_p);
 					}
