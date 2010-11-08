@@ -3,7 +3,7 @@
 #
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.1 - November 1, 2010
+# Version 2.2 - November 8, 2010
 #
 # Command line instructions:
 #   0) Make sure the first line of this file is your R path
@@ -55,10 +55,16 @@ LIBRARY_PATH="lib/"
 # Set this to the reference file to be used for fold-change calculations.
 REFERENCE_FILE="Unstimulated.fcs"
 
-# Set this to the desired number of events remaining after downsampling files
+# Set this to the desired number of events remaining after downsampling files.  Recommended:  50000
 DOWNSAMPLED_EVENTS=50000
 
-# Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value. 
+# Set this to the desired number of events to use for clustering.  Recommended:  50000
+CLUSTERING_SAMPLES=50000
+
+# Set this to the desired threshold for outliers (unit is the local density for each cell).  A higher value will discard more events.    Recommended:  0.01
+DOWNSAMPLING_EXCLUDE_PCTILE=0.01
+
+# Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value.  Recommended:  200
 TARGET_CLUSTERS=200
 
 # Path to output directory -- you probably don't need to change this.
@@ -88,7 +94,7 @@ Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
 
-SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, median_cols=ALL_MARKERS, reference_file=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, k=TARGET_CLUSTERS)
+SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=5.0, layout=SPADE.layout.arch_layout, median_cols=ALL_MARKERS, reference_file=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",out_dir=OUTPUT_DIR)
 
 Sys.unsetenv("OMP_NUM_THREADS")
