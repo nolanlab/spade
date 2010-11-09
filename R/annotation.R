@@ -35,10 +35,11 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
 		}
 		idxs <- subset(idxs, idxs != c_idx)  # Strip out cluster column
 	
-		if (!is.null(colnames(data)) && !setequal(colnames(data),colnames(in_data)[idxs])) {
+		if (!is.null(colnames(data)) && !setequal(colnames(data),pd$desc[idxs])) {
 			stop("Files have different columns")
 		}
 		data <- rbind(data, in_data[, idxs])
+		colnames(data) <- pd$desc[idxs]
 	}
 	   
 	count  <- c()
