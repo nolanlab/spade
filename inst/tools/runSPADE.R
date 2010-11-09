@@ -94,7 +94,7 @@ Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
 
-SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=5.0, layout=SPADE.layout.arch_layout, median_cols=ALL_MARKERS, reference_file=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
+SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=5.0, layout=SPADE.layout.arch_layout, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",out_dir=OUTPUT_DIR)
 
 Sys.unsetenv("OMP_NUM_THREADS")
