@@ -60,11 +60,6 @@ REFERENCE_FILE=c("Basal1.fcs","Basal2.fcs")
 # Fluorescence recommended value:  150
 ARCSINH_COFACTOR=5
 
-# Set this to the desired layout function.  Recommended:  SPADE.layout.arch
-# Option 1:  SPADE.layout.arch  ...this is fast, but allows overlapping nodes and edges
-# Option 2:  SPADE.layout.arch_layout  ...this is slow, but prevents overlapping nodes and edges
-LAYOUT_FUNCTION=SPADE.layout.arch
-
 # Set this to the desired number of events remaining after downsampling files.  Recommended:  50000
 DOWNSAMPLED_EVENTS=50000
 
@@ -103,6 +98,11 @@ for (e in commandArgs()) {
 Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
+
+# Set this to the desired layout function.  Recommended:  SPADE.layout.arch
+# Option 1:  SPADE.layout.arch  ...this is fast, but allows overlapping nodes and edges
+# Option 2:  SPADE.layout.arch_layout  ...this is slow, but prevents overlapping nodes and edges
+LAYOUT_FUNCTION=SPADE.layout.arch
 
 SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=ARCSINH_COFACTOR, layout=LAYOUT_FUNCTION, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 
