@@ -54,7 +54,8 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	}
 
 	graph  <- read.graph(graph_file, format="gml")
-	layout <- layout(graph)
+	layout_table <- layout(graph)
+	write.table(layout_table,paste(out_dir,file="layout.table",sep=""),row.names = FALSE,col.names = FALSE)
 
 	reference_medians <- NULL
 	if (!is.null(reference_files)) {
@@ -66,7 +67,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 		cat("Computing medians for file:",f,"\n")
 		a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
-		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".medians.gml",sep=""), format="gml")
+		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 
 		if (!is.null(reference_medians)) {			
 			cat("Computing fold change for file:",f,"\n")
@@ -78,7 +79,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			dimnames(fold) <- list(cc, colnames(a$medians))
 					
 			a <- list(count=a$count, fold=fold)	
-			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=a), paste(f,".fold.gml",sep=""), format="gml")
+			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".fold.gml",sep=""), format="gml")
 		}
 	}
 
