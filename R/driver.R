@@ -347,7 +347,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
 	    
 			plot(graph, layout=graph_l, 
-				vertex.shape="csquare", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
+				vertex.shape="circle", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
 			title(main=attrs[i])
 			subplot(
 				image(
