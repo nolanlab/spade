@@ -328,7 +328,9 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr[attr < boundary[1] | attr > boundary[2]] <- NA
 
 			if (is.null(normalize)) {
-				grad <- seq(min(attr,na.rm=TRUE),max(attr,na.rm=TRUE),length.out=length(colorscale))
+				r <- range(attr, na.rm=TRUE)
+				if (r[1] == r[2]) {  r <- c(r[1]-1, r[2]+1); }  # Prevent "zero" width gradients
+				grad <- seq(r[1], r[2], length.out=length(colorscale))
 			} else if (normalize == 'local') {
 				attr <- scale(attr, center=0.0, scale=max(abs(range(attr,na.rm=TRUE))))
 				grad <- seq(-1.0, 1.0, length.out=length(colorscale))
