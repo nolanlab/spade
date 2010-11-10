@@ -3,7 +3,7 @@
 #
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.2 - November 8, 2010
+# Version 2.3 - November 9, 2010
 #
 # Command line instructions:
 #   0) Make sure the first line of this file is your R path
@@ -40,20 +40,25 @@
 # Set this to the FCS file or folder to be processed.  If a folder is specified, all FCS files will be processed.
 FILE_TO_PROCESS="FCS_files/"
 
-# Set this to the markers used for clustering and tree construction.  Usually these are the surface markers.
-SURFACE_MARKERS=c("Cell_length", "DNA-1(Ir191)D", "110:114(Merged)", "CD123(Eu151)D", "CD14(Gd160)D", "CD20(Sm147)D", "CD33(Nd148)D", "CD4(Nd145)D", "CD45(In115)D", "CD7(Yb176)D", "HLADR(Yb174)D", "IgM(Yb171)D")
+# Set this to the reagent names ($P*S keywords from the FCS file) to be used for clustering and tree construction.  Usually these are the surface markers.
+SURFACE_MARKERS=c("Cell_length","CD45","CD19","CD47","CD34","CD33","CD38","CD56","CD20","CD10","DNA","110_114-CD3")
 
-# Set this to the markers used for fold-change calculations.  Usually these are phospho-specific markers.
-FUNCTIONAL_MARKERS=c("pAkt(Sm152)D", "pBTK(Er166)D", "pErk1_2(Er168)D", "pLat(Er170)D", "pNFkb(Nd142)D", "pp38(Nd144)D", "pPLCg2(Er167)D", "pS6(Yb172)D", "pShp2(Sm154)D", "pSlp76(Dy164)D", "pStat1(Eu153)D", "pStat3(Gd158)D", "pStat5(Nd150)D", "pZap70(Gd156)D")
+# Set this to the reagent names ($P*S keywords from the FCS file) to be used for fold-change calculations.  Usually these are phospho-specific markers.  If you don't have any, set to NULL
+FUNCTIONAL_MARKERS=c("pP38","pStat5","pErk","pSTAT3","pSLP76","IkB","pPLCg2","cCaspase3","pS6","pSrc","pCreb","pCrkL","pc-Cbl","pShp2","pBtk/Itk","pSyk")
 
 # Set this to all markers for which you want the basal medians.
-ALL_MARKERS=c("Cell_length", "DNA-1(Ir191)D", "110:114(Merged)", "CD123(Eu151)D", "CD14(Gd160)D", "CD20(Sm147)D", "CD33(Nd148)D", "CD4(Nd145)D", "CD45(In115)D", "CD7(Yb176)D", "HLADR(Yb174)D", "IgM(Yb171)D", "pAkt(Sm152)D", "pBTK(Er166)D", "pErk1_2(Er168)D", "pLat(Er170)D", "pNFkb(Nd142)D", "pp38(Nd144)D", "pPLCg2(Er167)D", "pS6(Yb172)D", "pShp2(Sm154)D", "pSlp76(Dy164)D", "pStat1(Eu153)D", "pStat3(Gd158)D", "pStat5(Nd150)D", "pZap70(Gd156)D")
+ALL_MARKERS=c(SURFACE_MARKERS, FUNCTIONAL_MARKERS)
 
 # Set this to the path to your local spade package installation -- if using a global installation, set to NULL.
 LIBRARY_PATH="lib/"
 
-# Set this to the reference file to be used for fold-change calculations.
-REFERENCE_FILE="Unstimulated.fcs"
+# Set this to the reference file(s) to be used for fold-change calculations.  If multiple files are specified, the medians will be averaged.  If you don't have one, set to NULL
+REFERENCE_FILE=c("Basal1.fcs","Basal2.fcs")
+
+# Set this to the desired arcsinh cofactor to transform cytometry data [transformed_value = arcsinh(original_value/cofactor)]
+# CyTOF recommended value:  5
+# Fluorescence recommended value:  150
+ARCSINH_COFACTOR=5
 
 # Set this to the desired number of events remaining after downsampling files.  Recommended:  50000
 DOWNSAMPLED_EVENTS=50000
@@ -67,10 +72,10 @@ DOWNSAMPLING_EXCLUDE_PCTILE=0.01
 # Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value.  Recommended:  200
 TARGET_CLUSTERS=200
 
-# Path to output directory -- you probably don't need to change this.
+# Path to output directory.  Recommended:  "output/"
 OUTPUT_DIR="output/"
 
-# Path to temporary directory -- you probably don't need to change this.
+# Path to temporary directory.  Recommended:  "/tmp/"
 TMPDIR="/tmp/"
 
 ###################  No need to modify anything below this point ########################
@@ -94,7 +99,15 @@ Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
 
-SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=5.0, layout=SPADE.layout.arch_layout, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
-SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",out_dir=OUTPUT_DIR)
+# Set this to the desired layout function.  Recommended:  SPADE.layout.arch
+# Option 1:  SPADE.layout.arch  ...this is fast, but allows overlapping nodes and edges
+# Option 2:  SPADE.layout.arch_layout  ...this is slow, but prevents overlapping nodes and edges
+LAYOUT_FUNCTION=SPADE.layout.arch
+
+SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=ARCSINH_COFACTOR, layout=LAYOUT_FUNCTION, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
+
+LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
+
+SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
 
 Sys.unsetenv("OMP_NUM_THREADS")
