@@ -39,7 +39,7 @@ SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfile
     data = c()
     for (f in infilenames) {
 		# Load in FCS file
-		in_fcs  <- read.FCS(f);
+		in_fcs  <- SPADE.read.FCS(f);
 		in_data <- exprs(in_fcs);
 
 		params <- parameters(in_fcs);

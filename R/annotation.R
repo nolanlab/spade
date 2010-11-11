@@ -11,7 +11,7 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
 	files <- as.vector(files)
 	for (f in files) {
 		# Load in FCS file
-		in_fcs  <- read.FCS(f);
+		in_fcs  <- SPADE.read.FCS(f);
 		in_data <- exprs(in_fcs);
 
 		params <- parameters(in_fcs);

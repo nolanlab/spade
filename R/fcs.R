@@ -1,16 +1,15 @@
-SPADE.read.FCS <- function(file, transform=TRUE) {
-	fcs <- read.FCS(file, transform=transform)
+SPADE.read.FCS <- function(file, ...) {
+	fcs <- read.FCS(file, ...)
 	params <- parameters(fcs)
 	pd <- pData(params)
 
 	# Replace any null descs with names (for FSC-A, FSC-W, SSC-A)
-    if (any(is.na(pd$desc))) {
-		keyval <- list()
-		for (i in seq_len(nrow(pd))) {
-			if (is.na(pd$desc[i])) {
-				pd$desc[i] <- pd$name[i]
-				keyval[[paste("$P",i,"S",sep="")]] <- pd$name[i]
-			}
+    bad_col <- grep("^[a-zA-Z0-9]+",pd$desc,invert=TRUE)
+	if (length(bad_col) > 0) {
+		keyval <- keyword(fcs)
+		for (i in bad_col) {
+			pd$desc[i] <- pd$name[i]
+			keyval[[paste("$P",i,"S",sep="")]] <- pd$name[i]
 		}
 		pData(params) <- pd;
 		fcs <- flowFrame(exprs(fcs),params,description=description(fcs));
