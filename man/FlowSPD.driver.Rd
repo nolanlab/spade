@@ -44,7 +44,7 @@ Desired number of samples remaining after downsampling files
 Numeric value in [0,1]. Densities below this percentile will be excluded during downsampling.
 }
   \item{downsampling_target_pctile}{
-Numeric value in [0,1]. Densities below this percentile, but above ‘exclude_pctile’ will be retained during downsampling. Only meaningful if ‘downsampling_samples’ is ‘NULL’.
+Numeric value in [0,1]. Densities below this percentile, but above 'exclude_pctile' will be retained during downsampling. Only meaningful if 'downsampling_samples' is 'NULL'.
 }
   \item{k}{
 Desirec number of clusters. Algorithm might create between [k/2,3k/2] clusters.

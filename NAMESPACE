@@ -14,5 +14,6 @@ export(
     "SPADE.layout.arch_layout",
     "SPADE.annotateGraph",
     "SPADE.driver",
+	"SPADE.normalize.trees",
     "SPADE.plot.trees"
 )
