@@ -1,6 +1,21 @@
+# Helper functions
+
 SPADE.strip.sep <- function(name) {
     ifelse(substr(name,nchar(name),nchar(name))==.Platform$file,substr(name,1,nchar(name)-1),name)
 }
+
+SPADE.normalize.out_dir <- function(out_dir) {
+	out_dir_info <- file.info(out_dir)
+		if (is.na(out_dir_info$isdir)) {
+			dir.create(out_dir)
+		}
+	if (!file.info(out_dir)$isdir) {
+		stop(paste("out_dir:",out_dir,"is not a directory"))
+	}
+	out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
+}
+
+# Driver convenience functions
 
 SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000) {
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -284,23 +299,76 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
+SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="count|median|fold", normalize="global") {
+	if (length(files) == 1 && file.info(files)$isdir) {
+		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
+    }
+	out_dir <- SPADE.normalize.out_dir(out_dir)
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_keep=c(0.02,0.98), normalize=NULL) {
+
+	clean_attr <- function(attr) {
+		attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+		attr
+	}
+
+	attr_ranges <- function(file) {
+		ar <- c()	
+		graph <- read.graph(f, format="gml")
+		attrs <- list.vertex.attributes(graph)
+		for (i in grep(attr_pattern, attrs)) {
+			attr <- clean_attr(get.vertex.attribute(graph,attrs[i]))			
+			ar[[attrs[i]]] <- range(ar[[attrs[i]]], attr, na.rm=TRUE)
+		}
+		ar
+	}
+
+	sf_fn <- NULL
+	if (normalize == "global") {
+		gr <- c()  # Ranges of all encountered attributes
+		for (f in files) {
+			ar <- attr_ranges(f)
+			for (i in seq_along(ar)) { n <- names(ar[i]); gr[[n]] <- range(gr[[n]], ar[i], na.rm=TRUE); }
+		}			
+		sf_fn <- function(a_name, a_vals) { 
+			ifelse(is.null(gr[[a_name]]),max(abs(range(a_vals, na.rm=TRUE))), max(abs(gr[[a_name]])))
+		}
+	} else if (normalize == "local") {
+		sf_fn <- function(a_name, a_vals) {
+			max(abs(range(a_vals, na.rm=TRUE)))
+		}
+	} else
+		stop("Unsupported kind of normalization")
+			
+
+	for (f in files) {
+		graph <- read.graph(f, format="gml")
+		attrs <- list.vertex.attributes(graph)
+				
+		if (is.function(layout))
+			graph_l <- layout(graph)
+		else
+			graph_l <- layout	
+		
+		for (i in grep(attr_pattern, attrs)) {
+			attr <- clean_attr(get.vertex.attribute(graph,attrs[i]))
+			sf <- sf_fn(attrs[i], attr)
+			if (sf != 0.0)
+				attr <- scale(attr, center=0.0, scale=sf)
+			graph <- set.vertex.attribute(graph, attrs[i], value=attr)
+		}
+		SPADE.write.graph(SPADE.annotateGraph(graph, layout=graph_l), paste(out_dir,basename(f),".",normalize,".norm.gml",sep=""), format="gml")
+	}
+
+}
+
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_color=c(0.0,1.0)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
+	out_dir <- SPADE.normalize.out_dir(out_dir)
 
-    out_dir_info <- file.info(out_dir)
-    if (is.na(out_dir_info$isdir)) {
-		dir.create(out_dir)
-    }
-    if (!file.info(out_dir)$isdir) {
-		stop(paste("out_dir:",out_dir,"is not a directory"))
-    }
-    out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
-
-	if (!is.vector(pctile_keep) || length(pctile_keep) != 2) {
-		stop("pctile_keep must be a two element vector with values in [0,1]")
+	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
+		stop("pctile_color must be a two element vector with values in [0,1]")
 	}
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -325,21 +393,12 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr <- get.vertex.attribute(graph,attrs[i])
 			
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-			boundary <- quantile(attr, probs=pctile_keep, na.rm=TRUE)  # Trim outliers
-			attr[attr < boundary[1] | attr > boundary[2]] <- NA
-
-			if (is.null(normalize)) {
-				r <- range(attr, na.rm=TRUE)
-				if (r[1] == r[2]) {  r <- c(r[1]-1, r[2]+1); }  # Prevent "zero" width gradients
-				grad <- seq(r[1], r[2], length.out=length(colorscale))
-			} else if (normalize == 'local') {
-				attr <- scale(attr, center=0.0, scale=max(abs(range(attr,na.rm=TRUE))))
-				grad <- seq(-1.0, 1.0, length.out=length(colorscale))
-			} else {
-				stop("normalize must be null or 'local'")
-			}
-
-			color <- colorscale[findInterval(attr, grad)]
+			boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
+			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
+			boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric
+			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
+		
+			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr)] <- "grey"
 			V(graph)$color <- color
 	    
@@ -351,8 +410,9 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			title(main=attrs[i])
 			subplot(
 				image(
-					grad,c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,
-					xlab="",ylab="",yaxt="n",xaxp=c(round(range(grad),2),1)
+					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
+					xlab=paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),
+					ylab="", yaxt="n", xaxp=c(round(range(grad),2),1)
 				),
 				x="right,bottom",size=c(1,.20)
 			)

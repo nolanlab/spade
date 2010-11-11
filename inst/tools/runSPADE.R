@@ -78,6 +78,9 @@ DOWNSAMPLING_EXCLUDE_PCTILE=0.01
 # Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value.  Recommended:  200
 TARGET_CLUSTERS=200
 
+# Set this to the desired median, fold change, etc. normalization in output graphs. Choices are "global", "local" or NULL. Recommend: "global"
+NORMALIZE="global"
+
 # Path to output directory.  Recommended:  "output/"
 OUTPUT_DIR="output/"
 
@@ -114,6 +117,11 @@ SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_
 
 LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
 
-SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+if (!is.null(NORMALIZE)) {
+	SPADE.normalize.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm",sep=""),normalize=NORMALIZE)
+	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+} else {
+	SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+}
 
 Sys.unsetenv("OMP_NUM_THREADS")

@@ -212,12 +212,14 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 		writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
 	    } 	    
 
-	    writeLines("graphics [",con=file)
-	    for (a in v_attr_g) {
-		parts <- unlist(strsplit(a,"[.]"))
-		writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
-	    }
-	    writeLines("]",con=file)
+	    if (length(v_attr_g) > 0) {
+			writeLines("graphics [",con=file)
+			for (a in v_attr_g) {
+				parts <- unlist(strsplit(a,"[.]"))
+				writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
+			}
+			writeLines("]",con=file)
+		}
 	      
 	    writeLines("]",con=file)
 	}
