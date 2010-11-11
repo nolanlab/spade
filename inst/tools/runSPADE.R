@@ -16,13 +16,13 @@
 #   $ chmod +x runSPADE.R
 #
 #   5a) For normal use (not in a load sharing or compute cluster): At the command line, run:
-#	$ runSPADE.R [-num_threads=X] [-file_to_process=Y]
+#	$ ./runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	where X is the number of threads you wish to use (default = 1)
 #	Y is the name of the file to process (default = use file(s) specified in this script)
 #		Note that parameters in brackets may be omitted.
 #
 #   5b) For Sun Gridengine: At the command line, run:
-#	$ qsub -cwd -j y -b y -m e -M username@domain.ext [-pe threaded A] runSPADE.R [-num_threads=X] [-file_to_process=Y]
+#	$ qsub -cwd -j y -b y -m e -M username@domain.ext [-pe threaded A] ./runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	where username@domain.ext is your e-mail address to e-mail when the job is done,
 #	A is the number of slots to reserve with Gridengine,
 #	X is the number of threads to use in SPADE (usually the same as A) (default = 1).
@@ -30,7 +30,7 @@
 #		Note that parameters in brackets may be omitted.
 #
 #   5c) For Platform LSF: At the command line, run:
-#	$ bsub [-n A -R "span[hosts=1]"] runSPADE.R [-num_threads=X] [-file_to_process=Y]
+#	$ bsub [-n A -R "span[hosts=1]"] ./runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	A is the number of slots to reserve with LSF,
 #	X is the number of threads to use in SPADE (usually the same as A) (default = 1).
 #	Y is the name of the file to process (default = use file(s) specified in this script)
