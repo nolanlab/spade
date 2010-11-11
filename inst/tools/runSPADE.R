@@ -3,30 +3,33 @@
 #
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.3 - November 9, 2010
+# Version 2.4 - November 10, 2010
 #
 # Command line instructions:
-#   0) Make sure the first line of this file is your Rscript path (found in the same directory as R)
+#   1) Make sure the first line of this file is your Rscript path (found in the same directory as R)
 #
-#   1) Customize the parameters that are CAPITALIZED below 
+#   2) Customize the parameters that are CAPITALIZED below 
 #
-#   2) In a command shell, navigate to the folder containing this script and the FCS file(s) to be analyzed
+#   3) In a command shell, navigate to the folder containing this script and the FCS file(s) to be analyzed
 #
-#   3a) For normal use (not in a load sharing or compute cluster): At the command line, run:
+#   4) Make this script executable.  At the command line, run:
+#   $ chmod +x runSPADE.R
+#
+#   5a) For normal use (not in a load sharing or compute cluster): At the command line, run:
 #	$ runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	where X is the number of threads you wish to use (default = 1)
 #	Y is the name of the file to process (default = use file(s) specified in this script)
 #		Note that parameters in brackets may be omitted.
 #
-#   3b) For Sun Gridengine: At the command line, run:
-#	$ qsub -cwd -j y -m e -M username@domain.ext [-pe threaded A] runSPADE.R [-num_threads=X] [-file_to_process=Y]
+#   5b) For Sun Gridengine: At the command line, run:
+#	$ qsub -cwd -j y -b y -m e -M username@domain.ext [-pe threaded A] runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	where username@domain.ext is your e-mail address to e-mail when the job is done,
 #	A is the number of slots to reserve with Gridengine,
 #	X is the number of threads to use in SPADE (usually the same as A) (default = 1).
 #	Y is the name of the file to process (default = use file(s) specified in this script)
 #		Note that parameters in brackets may be omitted.
 #
-#   3c) For Platform LSF: At the command line, run:
+#   5c) For Platform LSF: At the command line, run:
 #	$ bsub [-n A -R "span[hosts=1]"] runSPADE.R [-num_threads=X] [-file_to_process=Y]
 #	A is the number of slots to reserve with LSF,
 #	X is the number of threads to use in SPADE (usually the same as A) (default = 1).
