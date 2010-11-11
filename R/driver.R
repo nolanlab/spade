@@ -361,22 +361,14 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_keep=c(0.02,0.98), normalize=NULL) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_color=c(0.0,1.0)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
+	out_dir <- SPADE.normalize.out_dir(out_dir)
 
-    out_dir_info <- file.info(out_dir)
-    if (is.na(out_dir_info$isdir)) {
-		dir.create(out_dir)
-    }
-    if (!file.info(out_dir)$isdir) {
-		stop(paste("out_dir:",out_dir,"is not a directory"))
-    }
-    out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
-
-	if (!is.vector(pctile_keep) || length(pctile_keep) != 2) {
-		stop("pctile_keep must be a two element vector with values in [0,1]")
+	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
+		stop("pctile_color must be a two element vector with values in [0,1]")
 	}
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -401,21 +393,12 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr <- get.vertex.attribute(graph,attrs[i])
 			
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-			boundary <- quantile(attr, probs=pctile_keep, na.rm=TRUE)  # Trim outliers
-			attr[attr < boundary[1] | attr > boundary[2]] <- NA
-
-			if (is.null(normalize)) {
-				r <- range(attr, na.rm=TRUE)
-				if (r[1] == r[2]) {  r <- c(r[1]-1, r[2]+1); }  # Prevent "zero" width gradients
-				grad <- seq(r[1], r[2], length.out=length(colorscale))
-			} else if (normalize == 'local') {
-				attr <- scale(attr, center=0.0, scale=max(abs(range(attr,na.rm=TRUE))))
-				grad <- seq(-1.0, 1.0, length.out=length(colorscale))
-			} else {
-				stop("normalize must be null or 'local'")
-			}
-
-			color <- colorscale[findInterval(attr, grad)]
+			boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
+			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
+			boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric
+			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
+		
+			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr)] <- "grey"
 			V(graph)$color <- color
 	    
@@ -427,8 +410,9 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			title(main=attrs[i])
 			subplot(
 				image(
-					grad,c(1),matrix(1:length(colorscale),ncol=1),col=colorscale,
-					xlab="",ylab="",yaxt="n",xaxp=c(round(range(grad),2),1)
+					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
+					xlab=paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),
+					ylab="", yaxt="n", xaxp=c(round(range(grad),2),1)
 				),
 				x="right,bottom",size=c(1,.20)
 			)
