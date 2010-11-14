@@ -119,7 +119,7 @@ LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
 
 if (!is.null(NORMALIZE)) {
 	SPADE.normalize.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm",sep=""),normalize=NORMALIZE)
-	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""),scale=c(-1,1))
 } else {
 	SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
 }

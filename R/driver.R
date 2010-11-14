@@ -361,11 +361,14 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_color=c(0.0,1.0)) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", scale=NULL, pctile_color=c(0.0,1.0)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
 	out_dir <- SPADE.normalize.out_dir(out_dir)
+
+	if (!is.null(scale) && (!is.vector(scale) || length(scale) !=2))
+		stop("scale must be a two element vector")
 
 	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
 		stop("pctile_color must be a two element vector with values in [0,1]")
@@ -393,7 +396,10 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr <- get.vertex.attribute(graph,attrs[i])
 			
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-			boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
+			if (!is.null(scale))
+				boundary <- scale
+			else
+				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
 			boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric
 			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
@@ -411,7 +417,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			subplot(
 				image(
 					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
-					xlab=paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),
+					xlab=ifelse(is.null(scale),paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
 					ylab="", yaxt="n", xaxp=c(round(range(grad),2),1)
 				),
 				x="right,bottom",size=c(1,.20)
