@@ -82,6 +82,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 		cat("Computing medians for file:",f,"\n")
 		a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+		a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
 		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 
 		if (!is.null(reference_medians)) {			
@@ -299,7 +300,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
-SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="count|median|fold", normalize="global") {
+SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", normalize="global") {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -361,7 +362,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", scale=NULL, pctile_color=c(0.0,1.0)) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.0,1.0)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
