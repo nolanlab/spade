@@ -82,6 +82,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 		cat("Computing medians for file:",f,"\n")
 		a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+		a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
 		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 
 		if (!is.null(reference_medians)) {			
@@ -299,7 +300,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
-SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="count|median|fold", normalize="global") {
+SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", normalize="global") {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -361,11 +362,14 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="median|fold", pctile_color=c(0.0,1.0)) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.0,1.0)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
 	out_dir <- SPADE.normalize.out_dir(out_dir)
+
+	if (!is.null(scale) && (!is.vector(scale) || length(scale) !=2))
+		stop("scale must be a two element vector")
 
 	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
 		stop("pctile_color must be a two element vector with values in [0,1]")
@@ -393,7 +397,10 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr <- get.vertex.attribute(graph,attrs[i])
 			
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-			boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
+			if (!is.null(scale))
+				boundary <- scale
+			else
+				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
 			boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric
 			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
@@ -411,7 +418,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			subplot(
 				image(
 					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
-					xlab=paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),
+					xlab=ifelse(is.null(scale),paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
 					ylab="", yaxt="n", xaxp=c(round(range(grad),2),1)
 				),
 				x="right,bottom",size=c(1,.20)

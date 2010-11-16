@@ -137,6 +137,11 @@ SPADE.annotateGraph <- function(graph, layout=NULL, anno=NULL) {
 		if (nrow(layout) != vcount(graph) || ncol(layout) != 2) {
 			stop("Ill-formated layout matrix, must 2 columns (x,y) and as many rows as vertices")
 		}
+		# Over write non-struct graphics attributes if they exist
+		v_attr <- list.vertex.attributes(graph)
+		for (i in grep("^graphics$",v_attr))
+			graph <- remove.vertex.attribute(graph, v_attr[i])
+		
 		graph <- set.vertex.attribute(graph, "graphics.x", value=layout[,1])
 		graph <- set.vertex.attribute(graph, "graphics.y", value=layout[,2])
     }
@@ -162,86 +167,86 @@ SPADE.annotateGraph <- function(graph, layout=NULL, anno=NULL) {
 
 SPADE.write.graph <- function(graph, file="", format = c("gml")) {
     if (!is.igraph(graph)) {
-	stop("Not a graph object")
+		stop("Not a graph object")
     }
     
     if (file == "")
-	file <- stdout()
+		file <- stdout()
     else if (is.character(file)) {
-	file <- file(file, "w")
-	on.exit(close(file))
+		file <- file(file, "w")
+		on.exit(close(file))
     }
     else if (!isOpen(file, "w")) {
-	open(file, "w")
-	on.exit(close(file))
+		open(file, "w")
+		on.exit(close(file))
     }
     if (!inherits(file, "connection")) {
-	stop("'file' must be a character string or a connection")
+		stop("'file' must be a character string or a connection")
     }
 
     write.gml <- function(graph,file) {
 	
-	write.attr <- function(name, attr) {
-	    # Strip out non-alphanumeric characters to avoid Cytoscape parsing errors
-	    name <- gsub("[^A-Za-z0-9]","",name)
-	    if (length(grep("^[0-9]",name))) {
-		name <- paste("spade",name,sep="")
-	    }
-	    if (is.na(attr))
-		paste(name,"NaN")
-	    else if (is.character(attr))
-		paste(name," \"",attr,"\"",sep="")
-	    else
-		paste(name,attr)
-	}
-	
-	writeLines(c("graph [", paste("directed",ifelse(is.directed(graph),1,0))),con=file)
-
-	# Identify known "structs"	
-	v_attr <- list.vertex.attributes(graph)
-	v_attr_g <- v_attr[grep("graphics[.]",v_attr)]  # graphics attributes
-	v_attr <- setdiff(v_attr, v_attr_g)
-	if (length(grep("[.]",v_attr)) > 0) {
-	    stop("Unsupported struct in vertex attributes")
-	}
-	
-	for (v in V(graph)) {
-	    writeLines("node [",con=file)
-	 
-	    for (a in v_attr) {
-		writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
-	    } 	    
-
-	    if (length(v_attr_g) > 0) {
-			writeLines("graphics [",con=file)
-			for (a in v_attr_g) {
-				parts <- unlist(strsplit(a,"[.]"))
-				writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
-			}
-			writeLines("]",con=file)
+		write.attr <- function(name, attr) {
+		    # Strip out non-alphanumeric characters to avoid Cytoscape parsing errors
+		    name <- gsub("[^A-Za-z0-9]","",name)
+		    if (length(grep("^[0-9]",name))) {
+				name <- paste("spade",name,sep="")
+		    }
+		    if (is.na(attr))
+				paste(name,"NaN")
+		    else if (is.character(attr) && nchar(attr) > 0)
+				paste(name," \"",attr,"\"",sep="")
+		    else
+				paste(name,attr)
 		}
-	      
-	    writeLines("]",con=file)
-	}
-	
-	# Identify known "structs"	
-	e_attr <- list.edge.attributes(graph)
-	if (length(grep("[.]",e_attr)) > 0) {
-	    stop("Unsupported struct in edge attributes")
-	}
+		
+		writeLines(c("graph [", paste("directed",ifelse(is.directed(graph),1,0))),con=file)
 
-	for (e in E(graph)) {
-	    writeLines("edge [",con=file)
-	
-	    pts <- get.edges(graph,e)
-	    writeLines(c(paste("source",pts[1]), paste("target",pts[2])),con=file)
-	    for (a in e_attr) {
-		writeLines(paste(a,get.edge.attribute(graph,a,index=e)),con=file)
-	    }	
+		# Identify known "structs"	
+		v_attr <- list.vertex.attributes(graph)
+		v_attr_g <- v_attr[grep("graphics[.]",v_attr)]  # graphics attributes
+		v_attr <- setdiff(v_attr, v_attr_g)  
+		if (length(grep("[.]",v_attr)) > 0) {
+		    stop("Unsupported struct in vertex attributes")
+		}
+		
+		for (v in V(graph)) {
+		    writeLines("node [",con=file)
+		 
+		    for (a in v_attr) {
+				writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
+		    } 	    
 
-	    writeLines("]",con=file)	
-	}
-	writeLines("]",con=file)
+		    if (length(v_attr_g) > 0) {
+				writeLines("graphics [",con=file)
+				for (a in v_attr_g) {
+					parts <- unlist(strsplit(a,"[.]"))
+					writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
+				}
+				writeLines("]",con=file)
+			}
+		      
+		    writeLines("]",con=file)
+		}
+		
+		# Identify known "structs"	
+		e_attr <- list.edge.attributes(graph)
+		if (length(grep("[.]",e_attr)) > 0) {
+		    stop("Unsupported struct in edge attributes")
+		}
+
+		for (e in E(graph)) {
+		    writeLines("edge [",con=file)
+		
+		    pts <- get.edges(graph,e)
+		    writeLines(c(paste("source",pts[1]), paste("target",pts[2])),con=file)
+		    for (a in e_attr) {
+				writeLines(paste(a,get.edge.attribute(graph,a,index=e)),con=file)
+		    }	
+
+		    writeLines("]",con=file)	
+		}
+		writeLines("]",con=file)
     }
 
     res <- switch(format,   
