@@ -362,7 +362,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.0,1.0)) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.02,0.98)) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -392,8 +392,8 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
 		vsize[is.na(vsize)] <- 1
 
-		for (i in grep(attr_pattern, attrs)) {
-			# Compute the color for each vertex using color gradient
+		for (i in grep("median|fraction|fold", attrs)) {
+			# Compute the color for each vertex using color gradient scaled from min to max
 			attr <- get.vertex.attribute(graph,attrs[i])
 			
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
@@ -402,7 +402,11 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			else
 				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
-			boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric
+			if (length(grep("median|fraction", attrs[i])))
+				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or fraction values
+			else
+				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change values
+								
 			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
@@ -427,5 +431,4 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			dev.off()
 		}
     }
-
 }
