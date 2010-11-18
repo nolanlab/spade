@@ -79,23 +79,35 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	}
 
 	for (f in sampled_files) {
-
-		cat("Computing medians for file:",f,"\n")
-		a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
-		a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
-		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
-
-		if (!is.null(reference_medians)) {			
+		if (!is.null(reference_medians)) {	# If a reference file is specified		
+			cat("Computing medians for file:",f,"\n")
+			# Compute the median marker intensities in each node
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+			
+			# Compute the overall cell frequency per node
+			a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
+			
 			cat("Computing fold change for file:",f,"\n")
-			a <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
+			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
 			
 			# Compute the fold change compared to reference medians
-			cc <- rownames(a$medians)[!is.na(match(rownames(a$medians),rownames(reference_medians$medians)))]  # Common clusters
-			fold <- a$medians[cc,] - reference_medians$medians[cc,]
-			dimnames(fold) <- list(cc, colnames(a$medians))
-					
-			a <- list(count=a$count, fold=fold)	
-			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".fold.gml",sep=""), format="gml")
+			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
+			fold <- b$medians[cc,] - reference_medians$medians[cc,]
+			dimnames(fold) <- list(cc, colnames(b$medians))
+			b <- list(count=b$count, fold=fold)		
+			
+			# Merge the fold-change columns with the count, frequency, and median columns
+			ab <- list(count = a$count, fraction = a$fraction, medians = a$medians, fold = b$fold)
+
+			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
+		} else {
+			cat("Computing medians for file:",f,"\n")
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+			
+			# Compute the overall cell frequency per node
+			a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
+			
+			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 		}
 	}
 
