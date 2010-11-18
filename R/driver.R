@@ -362,7 +362,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.02,0.98)) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global") {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -373,6 +373,42 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 
 	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
 		stop("pctile_color must be a two element vector with values in [0,1]")
+	}
+
+	clean_attr <- function(attr) {
+		attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+		attr
+	}
+
+	if (normalize == "global") {
+		boundaries <- c()  # Calculate ranges of all encountered attributes with trimmed outliers
+		all_attrs <- c()
+		for (f in files) {
+			graph <- read.graph(f, format="gml")
+			attrs <- list.vertex.attributes(graph)
+			for (i in grep("median|fraction|fold", attrs)) {
+				attr <- clean_attr(get.vertex.attribute(graph,attrs[i]))
+				if (is.null(all_attrs)) { # Create the first item in the all_attrs list
+					all_attrs[[1]] <- attr
+					names(all_attrs)[1] <- attrs[i]
+				} else { # Look for existing entries in all_attrs with the same name as attrs[i]
+					nm <- match(attrs[i],names(all_attrs))
+					if (!is.na(nm)) { # If a match is found, append attr to it
+						all_attrs[[nm]] <- c(all_attrs[[nm]], attr)
+					} 
+					else 
+					{ # If no match is found, create a new list item and append attr
+						ni <- length(all_attrs)+1
+						all_attrs[[ni]] <- attr
+						names(all_attrs)[ni] <- attrs[i]
+					}
+				}
+			}
+		}
+		for (i in seq_along(1:length(all_attrs))) {
+			boundaries[[i]] <- quantile(all_attrs[[i]], probs=pctile_color, na.rm=TRUE)
+			names(boundaries)[i] <- names(all_attrs)[i]
+		}
 	}
 
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
@@ -399,8 +435,12 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
 			if (!is.null(scale))
 				boundary <- scale
-			else
-				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers
+			else if (normalize == "global") { # Scale to global min/max
+					j <- match(attrs[i],names(boundaries))
+					boundary <- boundaries[[j]] # Recall trimmed global boundary for this attribute
+			} else # Scale to local min/max
+					boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
+				
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
 			if (length(grep("median|fraction", attrs[i])))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or fraction values
@@ -422,7 +462,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			subplot(
 				image(
 					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
-					xlab=ifelse(is.null(scale),paste("Scale:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
+					xlab=ifelse(is.null(scale),paste("Range:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
 					ylab="", yaxt="n", xaxp=c(round(range(grad),2),1)
 				),
 				x="right,bottom",size=c(1,.20)

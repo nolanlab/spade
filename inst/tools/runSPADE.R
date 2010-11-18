@@ -3,7 +3,7 @@
 #
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.4 - November 10, 2010
+# Version 2.5 - November 18, 2010
 #
 # Command line instructions:
 #   1) Make sure the first line of this file is your Rscript path (found in the same directory as R)
@@ -78,8 +78,11 @@ DOWNSAMPLING_EXCLUDE_PCTILE=0.01
 # Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value.  Recommended:  200
 TARGET_CLUSTERS=200
 
-# Set this to the desired median, fold change, etc. normalization in output graphs. Choices are "global", "local" or NULL. Recommend: "global"
+# Set this to the desired scale normalization in output graphs. Choices are "global", "local" or NULL. Recommend: "global"
 NORMALIZE="global"
+
+# Set this to create a second set of GML files with values normalized to a range of [-1, 1].  Set to FALSE to keep original values. Recommend: FALSE
+NORMALIZE_GML_FILES=FALSE
 
 # Path to output directory.  Recommended:  "output/"
 OUTPUT_DIR="output/"
@@ -117,11 +120,10 @@ SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_
 
 LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
 
-if (!is.null(NORMALIZE)) {
+if (NORMALIZE_GML_FILES) {
 	SPADE.normalize.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm",sep=""),normalize=NORMALIZE)
-	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""),scale=c(-1,1))
-} else {
-	SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm/pdf",sep=""),scale=c(-1,1))
 }
+SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
 
 Sys.unsetenv("OMP_NUM_THREADS")

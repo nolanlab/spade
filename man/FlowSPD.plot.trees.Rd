@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold", scale = NULL, pctile_color=c(0.0,1.0))
+SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global")
 }
 \arguments{
   \item{files}{
@@ -23,14 +23,17 @@ Directory where output files are written. Will be created if it does not exist.
 Either a function or a numeric matrix specifying how vertices are placed on plot. If it is a matrix, the matrix must have two columns, x and y position, and as many rows as vertices. If \code{layout} is a function, it will be called with an igraph graph as the single parameter.
 }
   \item{attr_pattern}{
-A regular expression that matches the attributes that should be plotted for each graph.
+A regular expression that matches the attributes that should be plotted for each graph.  Parameter names matching regex "median|fraction" will be plotted with a scale range set to [min, max] for that attribute, while all other parameters will be plotted on a centered scale with the range [abs(min(parameter values),max(parameter values)), abs(min(parameter values),max(parameter values))]
 }
   \item{scale}{
-A two element vectory, e.g. c(-1,1), specifying low and upper bound for color scale. Values below and above these bounds will be forced to the 'smallest' and 'largest' color respectively. If specified, overrides 'pctile_color'.
-  }
+A two element vector, e.g. c(-1,1), specifying low and upper bound for color scale. Values below and above these bounds will be forced to the 'smallest' and 'largest' color respectively. If specified, overrides 'pctile_color'.
+}
   \item{pctile_color}{
-	  A two element vector specifying lower and upper percentiles that should be used to set the color scale. Values below and above these percentiles will be forced to the 'smallest' and 'largest' color respectively. Not in effect if 'scale' is specified.
-  }
+A two element vector specifying lower and upper percentiles that should be used to set the color scale. Values below and above these percentiles will be forced to the 'smallest' and 'largest' color respectively. Not in effect if 'scale' is specified.
+}
+  \item{normalize}{
+A string (either "global" or "local"), specifying color scale normalization.  Setting to "global" will set the scale range to the global min/max of all GML files in the folder, while "local" will set the scale range to the min/max of the particular GML file being plotted.
+}
 }
 \details{
 }
