@@ -3,7 +3,7 @@ SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
     SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
+SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL) {
 
 	data  <- c()
 	c_ids <- c()
@@ -44,16 +44,24 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
 	   
 	count  <- c()
 	medians <- c()
+	paramnames <- c()
 
 	for (i in c_ids) {
 		data_s  <- asinh(subset(data, c_asn == i) / arcsinh_cofactor)
 		count   <- rbind(count, nrow(data_s))
 		medians <- rbind(medians, apply(data_s, 2, median))
 	}
+	
+	# Mark columns used for clustering
+	for (i in seq_along(colnames(data))) {
+		paramnames[i] <- colnames(data)[[i]]
+		if (!is.na(match(paramnames[i], cluster_cols)))
+			paramnames[i] <- paste(paramnames[i], "_clust", sep="")
+	}
 
 	colnames(count)   <- c("count")
 	rownames(count)   <- c_ids
-	colnames(medians) <- colnames(data)
+	colnames(medians) <- paramnames
 	rownames(medians) <- c_ids
 
     list(count=count, medians=medians)
@@ -188,7 +196,7 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 	
 		write.attr <- function(name, attr) {
 		    # Strip out non-alphanumeric characters to avoid Cytoscape parsing errors
-		    name <- gsub("[^A-Za-z0-9]","",name)
+		    name <- gsub("[^A-Za-z0-9_]","",name)
 		    if (length(grep("^[0-9]",name))) {
 				name <- paste("spade",name,sep="")
 		    }
