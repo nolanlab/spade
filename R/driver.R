@@ -75,20 +75,20 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	reference_medians <- NULL
 	if (!is.null(reference_files)) {
 		reference_files   <- sapply(as.vector(reference_files), function(rf) { paste(out_dir, rf, ".density.fcs.cluster.fcs",sep=""); })
-		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)
+		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
 	}
 
 	for (f in sampled_files) {
 		if (!is.null(reference_medians)) {	# If a reference file is specified		
 			cat("Computing medians for file:",f,"\n")
 			# Compute the median marker intensities in each node
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
 			
 			# Compute the overall cell frequency per node
 			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
 			
 			cat("Computing fold change for file:",f,"\n")
-			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
+			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)	
 
 			# Compute the fold change compared to reference medians
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
@@ -103,7 +103,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
 		} else {
 			cat("Computing medians for file:",f,"\n")
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
 			
 			# Compute the overall cell frequency per node
 			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
@@ -464,7 +464,10 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 				attrs[i] <- sub("fold", "Arcsinh diff. of ", attrs[i])
 			else
 				attrs[i] <- sub("percent", "Percent freq. of ", attrs[i])
-				
+						
+			# Make parameters used for clustering obvious
+			if (length(grep("_clust$", attrs[i])))
+				attrs[i] <- sub("_clust", "\n(Used for tree-building)", attrs[i])
 			
 			title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=attrs[i], sep="\n"))
 			subplot(
