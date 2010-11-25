@@ -85,19 +85,20 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
 			
 			# Compute the overall cell frequency per node
-			a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
+			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
 			
 			cat("Computing fold change for file:",f,"\n")
 			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor)	
-			
+
 			# Compute the fold change compared to reference medians
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
 			fold <- b$medians[cc,] - reference_medians$medians[cc,]
+
 			dimnames(fold) <- list(cc, colnames(b$medians))
 			b <- list(count=b$count, fold=fold)		
-			
+
 			# Merge the fold-change columns with the count, frequency, and median columns
-			ab <- list(count = a$count, fraction = a$fraction, medians = a$medians, fold = b$fold)
+			ab <- list(count = a$count, percent = a$percent, median = a$median, fold = b$fold)
 
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
 		} else {
@@ -105,7 +106,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor)
 			
 			# Compute the overall cell frequency per node
-			a[["fraction"]] <- a$count / sum(a$count); colnames(a[["fraction"]]) <- c("cells");
+			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
 			
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
 		}
@@ -312,7 +313,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
-SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", normalize="global") {
+SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", normalize="global") {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -374,7 +375,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="fraction|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global") {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global") {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -420,7 +421,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		else
 			graph_l <- layout	
 
-		vsize <- V(graph)$count
+		vsize <- V(graph)$percenttotal
 		vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
 		vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
 		vsize[is.na(vsize)] <- 1
@@ -438,8 +439,8 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 					boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
-			if (length(grep("median|fraction", attrs[i])))
-				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or fraction values
+			if (length(grep("median|percent", attrs[i])))
+				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change values
 			
@@ -454,9 +455,18 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			# Plot the tree, with legend showing the gradient
 			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
 	    
-			plot(graph, layout=graph_l, 
-				vertex.shape="circle", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
-			title(main=attrs[i])
+			plot(graph, layout=graph_l, vertex.shape="circle", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
+			
+			# Substitute pretty attribute names
+			if (length(grep("median", attrs[i])))
+				attrs[i] <- sub("median", "Median of ", attrs[i])
+			else if (length(grep("fold", attrs[i])))
+				attrs[i] <- sub("fold", "Arcsinh diff. of ", attrs[i])
+			else
+				attrs[i] <- sub("percent", "Percent freq. of ", attrs[i])
+				
+			
+			title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=attrs[i], sep="\n"))
 			subplot(
 				image(
 					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
