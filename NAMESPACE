@@ -15,5 +15,6 @@ export(
     "SPADE.annotateGraph",
     "SPADE.driver",
 	"SPADE.normalize.trees",
-    "SPADE.plot.trees"
+    "SPADE.plot.trees",
+	"SPADE.workflow.concat.FCS"
 )

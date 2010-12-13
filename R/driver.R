@@ -483,3 +483,23 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		}
     }
 }
+
+SPADE.workflow.concat.FCS <- function(files, file_pattern="*.density.fcs.cluster.fcs", out_dir=".", cols=NULL, layout=SPADE.layout.arch, arcsinh_cofactor=5.0, in_graph_file="mst.gml", out_graph_file="concat.gml", cluster_cols=NULL)  {
+	if (length(files) == 1 && file.info(files)$isdir) {
+		in_graph_file <- paste(SPADE.strip.sep(files),in_graph_file,sep=.Platform$file)
+		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
+    }
+	out_dir <- SPADE.normalize.out_dir(out_dir)
+
+	anno  <- SPADE.markerMedians(files,cols=cols,arcsinh_cofactor=arcsinh_cofactor,cluster_cols=cluster_cols)
+	graph <- read.graph(in_graph_file, format="gml")
+
+	# Compute the overall cell frequency per node
+	anno[["percent"]] <- anno$count / sum(anno$count) * 100; colnames(anno[["percent"]]) <- c("total");
+
+	out_graph_file <- paste(out_dir,out_graph_file,sep="")
+
+	SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=anno), out_graph_file, format="gml")
+}
+
+

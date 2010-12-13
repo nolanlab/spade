@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "median|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global")
+SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global")
 }
 \arguments{
   \item{files}{

@@ -5,3 +5,4 @@ config.status
 src/Makevars
 *.o
 *.so
+a.out.dSYM/

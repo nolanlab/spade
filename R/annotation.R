@@ -16,25 +16,19 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 
 		params <- parameters(in_fcs);
 		pd     <- pData(params);
-
-		# Find cluster column
-		c_idx <- match("cluster",pd$desc)
-		if (any(is.na(c_idx))) {
-			stop("No cluster parameter in FCS file")
-		}
-		c_asn <- in_data[,c_idx]
-		c_ids <- sort(union(c_ids, unique(c_asn))) # Used cluster indices
-
+	
 		# Select out the desired columns
 		if (is.null(cols)) {
 			cols <- as.vector(pd$desc) 
 		}
+		if (!"cluster" %in% cols) {
+			cols <- c(cols,"cluster")
+		}
+
 		idxs <- match(cols,pd$desc)
 		if (any(is.na(idxs))) { 
 			stop("Invalid column specifier") 
-		}
-		idxs <- subset(idxs, idxs != c_idx)  # Strip out cluster column
-	
+		}	
 		if (!is.null(colnames(data)) && !setequal(colnames(data),pd$desc[idxs])) {
 			stop("Files have different columns")
 		}
@@ -42,10 +36,14 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 		colnames(data) <- pd$desc[idxs]
 	}
 	   
-	count  <- c()
-	medians <- c()
+	count      <- c()
+	medians    <- c()
 	paramnames <- c()
 
+	c_asn <- data[,"cluster"]
+	c_ids <- sort(unique(c_asn))
+	data  <- data[,colnames(data)!="cluster",drop=FALSE]
+	
 	for (i in c_ids) {
 		data_s  <- asinh(subset(data, c_asn == i) / arcsinh_cofactor)
 		count   <- rbind(count, nrow(data_s))
