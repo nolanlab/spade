@@ -38,7 +38,7 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 		if (!is.null(colnames(data)) && !setequal(colnames(data),pd$desc[idxs])) {
 			stop("Files have different columns")
 		}
-		data <- rbind(data, in_data[, idxs])
+		data <- rbind(data, in_data[, idxs,drop=FALSE])
 		colnames(data) <- pd$desc[idxs]
 	}
 	   
