@@ -92,7 +92,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 			# Compute the fold change compared to reference medians
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
-			fold <- b$medians[cc,] - reference_medians$medians[cc,]
+			fold <- b$medians[cc,,drop=FALSE] - reference_medians$medians[cc,,drop=FALSE]
 
 			dimnames(fold) <- list(cc, colnames(b$medians))
 			b <- list(count=b$count, fold=fold)		

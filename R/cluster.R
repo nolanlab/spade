@@ -13,7 +13,7 @@ SPADE.cluster <- function(tbl, k) {
 	for (i in c(1:max(clust$assgn, na.rm=TRUE))) {  
 		obs <- which(clust$assgn == i)
 		if (length(obs) > 1) {
-			centers <- rbind(centers,colMeans(tbl[obs,]))
+			centers <- rbind(centers,colMeans(tbl[obs,,drop=FALSE]))
 			clust$assgn[obs] <- nrow(centers)
 		} else {
 			is.na(clust$assgn) <- obs
@@ -54,7 +54,7 @@ SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfile
 			stop("Invalid column specifier") 
 		}
 	
-		data <- rbind(data,in_data[,idxs])
+		data <- rbind(data,in_data[,idxs,drop=FALSE])
 		colnames(data) <- pd$desc[idxs]
     }
 
