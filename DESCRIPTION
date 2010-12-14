@@ -1,7 +1,7 @@
 Package: spade
 Title: spade: Spanning trees for flow cytometry data
-Version: 0.1
-Author: M. Linderman, P. Qiu
+Version: 0.2
+Author: M. Linderman, P. Qiu, E. Simonds, Z. Bjornsen
 Description: Provides tools for constructing minimum spanning trees of flow cytometry data
 Maintainer: M. Linderman <mlinderm@stanford.edu>
 Depends: R (>= 2.8.1), flowCore, igraph
