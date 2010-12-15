@@ -202,8 +202,10 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 				paste(name,"NaN")
 		    else if (is.character(attr) && nchar(attr) > 0)
 				paste(name," \"",attr,"\"",sep="")
-		    else
+		    else if (is.integer(attr))
 				paste(name,attr)
+			else
+				paste(name,formatC(attr,format="f"))
 		}
 		
 		writeLines(c("graph [", paste("directed",ifelse(is.directed(graph),1,0))),con=file)
@@ -211,14 +213,15 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 		# Identify known "structs"	
 		v_attr <- list.vertex.attributes(graph)
 		v_attr_g <- v_attr[grep("graphics[.]",v_attr)]  # graphics attributes
-		v_attr <- setdiff(v_attr, v_attr_g)  
+		v_attr <- setdiff(v_attr, c(v_attr_g, "id"))  
 		if (length(grep("[.]",v_attr)) > 0) {
 		    stop("Unsupported struct in vertex attributes")
 		}
 		
 		for (v in V(graph)) {
 		    writeLines("node [",con=file)
-		 
+			
+			writeLines(paste("id",v),con=file)
 		    for (a in v_attr) {
 				writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
 		    } 	    
