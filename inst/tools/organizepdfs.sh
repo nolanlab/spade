@@ -14,7 +14,7 @@ filenames=(`ls -1 *.pdf`)
 
 
 echo "=== Unique parameters: ==="
-uniqueparams=(`printf "%s\n" "${filenames[@]}" | sed 's/.*medians//g' | sed 's/\_clust//g' | sed 's/\.gml\.//g' | sed 's/\.pdf//g' |sort -u`)
+uniqueparams=(`printf "%s\n" "${filenames[@]}" | sed 's/.*\.gml\.median//g' | sed 's/.*\.gml\.fold//g' | sed 's/\_clust//g' | sed 's/.*\.gml\.//g' | sed 's/\.pdf//g' |sort -u`)
 printf "%s\n" "${uniqueparams[@]}"
 
 echo "=== Making folder for each parameter: ==="
