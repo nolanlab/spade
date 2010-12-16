@@ -198,8 +198,8 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 		    if (length(grep("^[0-9]",name))) {
 				name <- paste("spade",name,sep="")
 		    }
-		    if (is.na(attr))
-				paste(name,"NaN")
+		    if (is.na(attr) || is.nan(attr))
+				return
 		    else if (is.character(attr) && nchar(attr) > 0)
 				paste(name," \"",attr,"\"",sep="")
 		    else if (is.integer(attr))
