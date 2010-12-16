@@ -69,6 +69,10 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	}
 
 	graph  <- read.graph(graph_file, format="gml")
+	V(graph)$count        <- as.integer(0)   # Initialize counts and percent total for all nodes to zero
+	V(graph)$percenttotal <- 0.0
+	
+
 	layout_table <- layout(graph)
 	write.table(layout_table,paste(out_dir,file="layout.table",sep=""),row.names = FALSE,col.names = FALSE)
 

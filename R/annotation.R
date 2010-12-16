@@ -199,7 +199,7 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 				name <- paste("spade",name,sep="")
 		    }
 		    if (is.na(attr) || is.nan(attr))
-				return
+				stop("Unexpected NA or NaN attribute")
 		    else if (is.character(attr) && nchar(attr) > 0)
 				paste(name," \"",attr,"\"",sep="")
 		    else if (is.integer(attr))
@@ -223,14 +223,18 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 			
 			writeLines(paste("id",v),con=file)
 		    for (a in v_attr) {
-				writeLines(write.attr(a,get.vertex.attribute(graph,a,index=v)),con=file)
+				val <- get.vertex.attribute(graph,a,index=v)
+				if (!is.na(val) && !is.nan(val))
+					writeLines(write.attr(a,val),con=file)
 		    } 	    
 
 		    if (length(v_attr_g) > 0) {
 				writeLines("graphics [",con=file)
 				for (a in v_attr_g) {
 					parts <- unlist(strsplit(a,"[.]"))
-					writeLines(write.attr(parts[2],get.vertex.attribute(graph,a,index=v)),con=file)
+					val <- get.vertex.attribute(graph,a,index=v)
+					if (!is.na(val) && !is.nan(val))
+						writeLines(write.attr(parts[2],val),con=file)
 				}
 				writeLines("]",con=file)
 			}
@@ -250,7 +254,9 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 		    pts <- get.edges(graph,e)
 		    writeLines(c(paste("source",pts[1]), paste("target",pts[2])),con=file)
 		    for (a in e_attr) {
-				writeLines(paste(a,get.edge.attribute(graph,a,index=e)),con=file)
+				val <- get.edge.attribute(graph,a,index=e)
+				if (!is.na(val) && !is.nan(val))
+					writeLines(write.attr(a,val),con=file)
 		    }	
 
 		    writeLines("]",con=file)	
