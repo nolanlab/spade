@@ -379,7 +379,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global") {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -427,7 +427,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 
 		vsize <- V(graph)$percenttotal
 		vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
-		vsize <- vsize/max(vsize,na.rm=TRUE) * 3 + 2
+		vsize <- vsize/(max(vsize,na.rm=TRUE)^(1/size_scale_factor)) * 3 + 2
 		vsize[is.na(vsize)] <- 1
 
 		for (i in grep(attr_pattern, attrs)) {
