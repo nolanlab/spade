@@ -3,10 +3,10 @@ SPADE.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000
     .Call("SPADE_density",t(tbl),kernel_mult,apprx_mult,med_samples)
 
 SPADE.addDensityToFCS <- function(infilename, outfilename, 
-    cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000) {
+    cols=NULL, arcsinh_cofactor=5.0, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000, comp=TRUE) {
 
     # Load in FCS file, touching up missing descriptions if needed
-    in_fcs  <- SPADE.read.FCS(infilename);
+    in_fcs  <- SPADE.read.FCS(infilename,comp=comp);
     in_data <- exprs(in_fcs);
 	params <- parameters(in_fcs);
     pd     <- pData(params);
@@ -26,7 +26,7 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
 
 
     # Reload FCS file without transformation, so it can be accurately rewritten...
-    in_fcs <- SPADE.read.FCS(infilename,transform=FALSE)
+    in_fcs <- SPADE.read.FCS(infilename,comp=comp,transform=FALSE)
     in_data <- exprs(in_fcs);
 
     # Add column named "density" to the FCS file
@@ -57,9 +57,9 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
     write.FCS(out_frame,outfilename);
 }
 
-SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL) {
+SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL, comp=TRUE) {
     # Load in FCS file
-    in_fcs  <- SPADE.read.FCS(infilename,transform=FALSE);
+    in_fcs  <- SPADE.read.FCS(infilename,comp=comp,transform=FALSE);
     in_data <- exprs(in_fcs);
 
     params <- parameters(in_fcs);

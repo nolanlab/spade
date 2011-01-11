@@ -7,7 +7,7 @@ Annotate observations in FCS file with cluster assignment
 Annotate observations in a FCS file with cluster assignment
 }
 \usage{
-SPADE.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = 5)
+SPADE.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = 5, comp=TRUE)
 }
 \arguments{
   \item{infilename}{
@@ -28,6 +28,10 @@ use all parameters.
   \item{arcsinh_cofactor}{
 Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
 }
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
+}
+
 }
 \details{
 }

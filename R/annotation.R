@@ -3,7 +3,7 @@ SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
     SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL) {
+SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL, comp=TRUE) {
 
 	data  <- c()
 	c_ids <- c()
@@ -11,7 +11,7 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 	files <- as.vector(files)
 	for (f in files) {
 		# Load in FCS file
-		in_fcs  <- SPADE.read.FCS(f);
+		in_fcs  <- SPADE.read.FCS(f,comp=comp);
 		in_data <- exprs(in_fcs);
 
 		params <- parameters(in_fcs);

@@ -3,10 +3,10 @@ SPADE.assignToCluster <- function(tbl, cluster_data, cluster_assign)
     .Call("SPADE_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
 
 SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
-    cols=NULL, arcsinh_cofactor=5.0) {
+    cols=NULL, arcsinh_cofactor=5.0, comp=TRUE) {
 
     # Load in FCS file
-    in_fcs  <- SPADE.read.FCS(infilename);
+    in_fcs  <- SPADE.read.FCS(infilename,comp=comp);
     in_data <- exprs(in_fcs);
 
     params <- parameters(in_fcs);
@@ -20,7 +20,7 @@ SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     na.fail(idxs)
    
     # Load in clustered FCS file
-    cluster_fcs  <- SPADE.read.FCS(clusterfilename)
+    cluster_fcs  <- SPADE.read.FCS(clusterfilename,comp=comp)
     cluster_data <- exprs(cluster_fcs)    
 
     cluster_params <- parameters(cluster_fcs)
@@ -33,7 +33,7 @@ SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     assign <- SPADE.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor), asinh(cluster_data[,c_idxs]/arcsinh_cofactor), cluster_data[,"cluster"])
 
     # Reload FCS file without transformation, so it can be compactly rewritten...
-    in_fcs <- SPADE.read.FCS(infilename,transform=FALSE)
+    in_fcs <- SPADE.read.FCS(infilename,comp=comp,transform=FALSE)
     in_data <- exprs(in_fcs);
 
     # Add column named "cluster" to the FCS file

@@ -34,12 +34,12 @@ SPADE.writeGraph <- function(graph, outfilename) {
 }
 
 SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfilename, 
-    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000) {
+    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000,comp=TRUE) {
     
     data = c()
     for (f in infilenames) {
 		# Load in FCS file
-		in_fcs  <- SPADE.read.FCS(f);
+		in_fcs  <- SPADE.read.FCS(f,comp=comp);
 		in_data <- exprs(in_fcs);
 
 		params <- parameters(in_fcs);

@@ -17,7 +17,7 @@ SPADE.normalize.out_dir <- function(out_dir) {
 
 # Driver convenience functions
 
-SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000) {
+SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000,comp=TRUE) {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
 	}
@@ -40,11 +40,12 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
 		f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 
-		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, comp=comp)
 		SPADE.downsampleFCS(f_density, f_sampled, 
 							exclude_pctile=downsampling_exclude_pctile,
 							target_pctile=downsampling_target_pctile,
-							desired_samples=downsampling_samples)
+							desired_samples=downsampling_samples,
+							comp=comp)
 
 		density_files <- c(density_files, f_density)
 		sampled_files <- c(sampled_files, f_sampled)	
@@ -58,13 +59,14 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 					cols=cluster_cols, 
 					arcsinh_cofactor=arcsinh_cofactor, 
 					k=k, 
-					desired_samples=clustering_samples)
+					desired_samples=clustering_samples,
+					comp=comp)
 
 	sampled_files <- c()
 	for (f in density_files) {
 		cat("Upsampling file:",f,"\n")
 		f_sampled <- paste(f,".cluster.fcs",sep="")
-		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor)
+		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor,comp=comp)
 		sampled_files <- c(sampled_files, f_sampled)
 	}
 
@@ -79,20 +81,20 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	reference_medians <- NULL
 	if (!is.null(reference_files)) {
 		reference_files   <- sapply(as.vector(reference_files), function(rf) { paste(out_dir, rf, ".density.fcs.cluster.fcs",sep=""); })
-		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
+		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 	}
 
 	for (f in sampled_files) {
 		if (!is.null(reference_medians)) {	# If a reference file is specified		
 			cat("Computing medians for file:",f,"\n")
 			# Compute the median marker intensities in each node
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 			
 			# Compute the overall cell frequency per node
 			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
 			
 			cat("Computing fold change for file:",f,"\n")
-			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)	
+			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)	
 
 			# Compute the fold change compared to reference medians
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
@@ -107,7 +109,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
 		} else {
 			cat("Computing medians for file:",f,"\n")
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols)
+			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 			
 			# Compute the overall cell frequency per node
 			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");

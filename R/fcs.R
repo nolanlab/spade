@@ -1,4 +1,4 @@
-SPADE.read.FCS <- function(file, ...) {
+SPADE.read.FCS <- function(file, comp=TRUE, ...) {
 	fcs <- read.FCS(file, ...)
 	params <- parameters(fcs)
 	pd <- pData(params)
@@ -15,6 +15,20 @@ SPADE.read.FCS <- function(file, ...) {
 		fcs <- flowFrame(exprs(fcs),params,description=description(fcs));
 		keyword(fcs) <- keyval
 	}
+
+	# Compensate data if SPILL or SPILLOVER present, stripping compensation matrix 
+	# out of the flowFrame, i.e we should only have to do this once
+	apply.comp <- function(in_fcs, keyword) {
+		comp_fcs <- compensate(in_fcs, description(in_fcs)[[keyword]])
+		flowFrame(exprs(comp_fcs), parameters(comp_fcs), description(comp_fcs)[grep("SPILL",names(description(comp_fcs)),invert=TRUE)])
+	}
+	
+	if (comp && !is.null(description(fcs)$SPILL)) {
+		fcs <- apply.comp(fcs, "SPILL")	
+	} else if (comp && !is.null(description(fcs)$SPILLOVER)) {
+		fcs <- apply.comp(fcs, "SPILLOVER")	
+	}
+	
 	fcs
 }
 

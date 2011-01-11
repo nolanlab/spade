@@ -11,7 +11,7 @@ similar density. Downsampling is independent of how the density is modeled.
 \usage{
 SPADE.downsampleFCS(infilename, outfilename,
 		      exclude_pctile = 0.01, target_pctile = 0.05, 
-		      desired_samples = NULL)
+		      desired_samples = NULL, comp=TRUE)
 }
 \arguments{
   \item{infilename}{
@@ -33,6 +33,10 @@ Desired number of samples. If set to integer value, the target percentile will
 be set internally to downsample to approximately the desired number of
 samples.
 }
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
+}
+
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~

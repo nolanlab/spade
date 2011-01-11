@@ -10,7 +10,7 @@ spanning tree connecting those clusters.
 \usage{
 SPADE.FCSToTree(infilenames, outfilename, graphfilename, clusterfilename,
 		  cols = NULL, k = 200, arcsinh_cofactor = 5, 
-		  desired_samples = 50000)
+		  desired_samples = 50000, comp=TRUE)
 }
 \arguments{
   \item{infilenames}{
@@ -41,6 +41,10 @@ Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
   \item{desired_samples}{
 Desired number of samples to be used in clustering. Usually leave at default.
 }
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
+}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~

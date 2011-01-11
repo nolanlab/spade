@@ -9,7 +9,7 @@ to the FCS file. The local density is modeled as an integer count of the number 
 observations within a specified distance of the observation.
 }
 \usage{
-SPADE.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = 5, kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000)
+SPADE.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = 5, kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000, comp=TRUE)
 }
 \arguments{
   \item{infilename}{
@@ -37,6 +37,9 @@ approximated to have the same density
 }
   \item{med_samples}{
 Number of observations used to estimate the minimum median distance
+}
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 }
 \details{

@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, comp=TRUE) 
 }
 \arguments{
   \item{files}{
@@ -51,6 +51,9 @@ Desirec number of clusters. Algorithm might create between [k/2,3k/2] clusters.
 }
   \item{clustering_samples}{
 Desired number of samples to be used in clustering.
+}
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 }
 \details{

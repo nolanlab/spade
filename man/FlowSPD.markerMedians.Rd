@@ -8,7 +8,7 @@ Compute marker medians and counts for clusters
 Compute the marker medians and observations counts for cluster annoated FCS files.
 }
 \usage{
-SPADE.markerMedians(files, cols = NULL, arcsinh_cofactor = 5, cluster_cols=NULL)
+SPADE.markerMedians(files, cols = NULL, arcsinh_cofactor = 5, cluster_cols=NULL, comp=TRUE)
 SPADE.annotateMarkers(files, cols = NULL, arcsinh_cofactor = 5)
 }
 \arguments{
@@ -23,6 +23,9 @@ Cofactor used in the arcsinh transform \code{asinh(data/arcsinh_cofactor)} of da
 }
   \item{cluster_cols}{
 A vector of strings specifying columns that should be marked as having been used in clustering
+}
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 }
 \details{
