@@ -7,7 +7,7 @@ SPADE workflow helper for computing medians on concatenated FCS files
 A helper function for computing the medians of a set of FCS files concatenated together.
 }
 \usage{
-SPADE.workflow.concat.FCS(files, file_pattern = "*.density.fcs.cluster.fcs", out_dir = ".", cols = NULL, layout = SPADE.layout.arch, arcsinh_cofactor = 5, in_graph_file = "mst.gml", out_graph_file = "concat.gml", cluster_cols=NULL)
+SPADE.workflow.concat.FCS(files, file_pattern = "*.density.fcs.cluster.fcs", out_dir = ".", cols = NULL, layout = SPADE.layout.arch, arcsinh_cofactor = 5, in_graph_file = "mst.gml", out_graph_file = "concat.gml", cluster_cols=NULL, comp=TRUE)
 }
 \arguments{
   \item{files}{
@@ -36,6 +36,9 @@ File name for annotated GML file output. Will be placed in \code{out_dir}.
 }
   \item{cluster_cols}{
 A vector of strings specifying parameters that should be marked as being used in clustering.
+}
+  \item{comp}{
+Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 }
 \details{

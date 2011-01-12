@@ -33,7 +33,7 @@ SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     assign <- SPADE.assignToCluster(asinh(in_data[,idxs]/arcsinh_cofactor), asinh(cluster_data[,c_idxs]/arcsinh_cofactor), cluster_data[,"cluster"])
 
     # Reload FCS file without transformation, so it can be compactly rewritten...
-    in_fcs <- SPADE.read.FCS(infilename,comp=comp,transform=FALSE)
+    in_fcs <- SPADE.read.FCS(infilename,comp=FALSE,transform=FALSE)
     in_data <- exprs(in_fcs);
 
     # Add column named "cluster" to the FCS file

@@ -44,8 +44,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		SPADE.downsampleFCS(f_density, f_sampled, 
 							exclude_pctile=downsampling_exclude_pctile,
 							target_pctile=downsampling_target_pctile,
-							desired_samples=downsampling_samples,
-							comp=comp)
+							desired_samples=downsampling_samples)
 
 		density_files <- c(density_files, f_density)
 		sampled_files <- c(sampled_files, f_sampled)	
@@ -490,14 +489,14 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
     }
 }
 
-SPADE.workflow.concat.FCS <- function(files, file_pattern="*.density.fcs.cluster.fcs", out_dir=".", cols=NULL, layout=SPADE.layout.arch, arcsinh_cofactor=5.0, in_graph_file="mst.gml", out_graph_file="concat.gml", cluster_cols=NULL)  {
+SPADE.workflow.concat.FCS <- function(files, file_pattern="*.density.fcs.cluster.fcs", out_dir=".", cols=NULL, layout=SPADE.layout.arch, arcsinh_cofactor=5.0, in_graph_file="mst.gml", out_graph_file="concat.gml", cluster_cols=NULL, comp=TRUE)  {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		in_graph_file <- paste(SPADE.strip.sep(files),in_graph_file,sep=.Platform$file)
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
     }
 	out_dir <- SPADE.normalize.out_dir(out_dir)
 
-	anno  <- SPADE.markerMedians(files,cols=cols,arcsinh_cofactor=arcsinh_cofactor,cluster_cols=cluster_cols)
+	anno  <- SPADE.markerMedians(files,cols=cols,arcsinh_cofactor=arcsinh_cofactor,cluster_cols=cluster_cols, comp=comp)
 	graph <- read.graph(in_graph_file, format="gml")
 
 	# Compute the overall cell frequency per node
