@@ -19,30 +19,32 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 	
 		# Select out the desired columns
 		if (is.null(cols)) {
-			cols <- as.vector(pd$desc) 
+			cols <- as.vector(pd$name) 
 		}
 		if (!"cluster" %in% cols) {
 			cols <- c(cols,"cluster")
 		}
 
-		idxs <- match(cols,pd$desc)
+		idxs <- match(cols,pd$name)
 		if (any(is.na(idxs))) { 
 			stop("Invalid column specifier") 
 		}	
-		if (!is.null(colnames(data)) && !setequal(colnames(data),pd$desc[idxs])) {
-			stop("Files have different columns")
-		}
+		
 		data <- rbind(data, in_data[, idxs,drop=FALSE])
-		colnames(data) <- pd$desc[idxs]
+		colnames(data) <- sapply(idxs,function(x) { 
+			name <- paste(pd$name[x],pd$desc[x],sep="_")
+			if (pd$name[x] %in% cluster_cols)
+				name <- paste(name,"clust",sep="_")
+			name
+		})
 	}
 	   
 	count      <- c()
 	medians    <- c()
-	paramnames <- c()
 
-	c_asn <- data[,"cluster"]
+	c_asn <- data[,"cluster_cluster"]
 	c_ids <- sort(unique(c_asn))
-	data  <- data[,colnames(data)!="cluster",drop=FALSE]
+	data  <- data[,colnames(data)!="cluster_cluster",drop=FALSE]
 	
 	for (i in c_ids) {
 		data_s  <- asinh(subset(data, c_asn == i) / arcsinh_cofactor)
@@ -50,16 +52,9 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 		medians <- rbind(medians, apply(data_s, 2, median))
 	}
 	
-	# Mark columns used for clustering
-	for (i in seq_along(colnames(data))) {
-		paramnames[i] <- colnames(data)[[i]]
-		if (!is.na(match(paramnames[i], cluster_cols)))
-			paramnames[i] <- paste(paramnames[i], "_clust", sep="")
-	}
-
 	colnames(count)   <- c("count")
 	rownames(count)   <- c_ids
-	colnames(medians) <- paramnames
+	colnames(medians) <- colnames(data)
 	rownames(medians) <- c_ids
 
     list(count=count, medians=medians)

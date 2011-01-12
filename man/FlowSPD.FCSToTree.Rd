@@ -27,8 +27,8 @@ Name of file to write table of cluster centers
 }
   \item{cols}{
 Usually a vector of strings specifying the columns to be used in the density
-calculation, e.g., c("115-CD45","110-CD3"). Strings will be matched against
-the parameter descriptions extracted from the FCS file. The default=NULL will
+calculation, e.g., c("(Cd110)D","(Cs111)D"). Strings will be matched against
+the parameter names extracted from the FCS file. The default=NULL will
 use all parameters. 
 }
   \item{k}{

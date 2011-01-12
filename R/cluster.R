@@ -47,15 +47,15 @@ SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfile
 
 		# Select out the desired columns
 		if (is.null(cols)) { 
-			cols = as.vector(pd$desc) 
+			cols <- as.vector(pd$name) 
 		}
-		idxs <- match(cols,pd$desc)
+		idxs <- match(cols,pd$name)
 		if (any(is.na(idxs))) { 
 			stop("Invalid column specifier") 
 		}
 	
 		data <- rbind(data,in_data[,idxs,drop=FALSE])
-		colnames(data) <- pd$desc[idxs]
+		colnames(data) <- pd$name[idxs]
     }
 
     # Downsample data if neccessary 

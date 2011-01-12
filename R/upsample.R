@@ -14,10 +14,12 @@ SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
 
     # Select out the desired columns
     if (is.null(cols)) {
-	cols <- as.vector(pd$desc) 
+	cols <- as.vector(pd$name) 
     }
-    idxs <- match(cols,pd$desc)
-    na.fail(idxs)
+    idxs <- match(cols,pd$name)
+    if (any(is.na(idxs))) { 
+		stop("Invalid column specifier") 
+	}	
    
     # Load in clustered FCS file
     cluster_fcs  <- SPADE.read.FCS(clusterfilename,comp=comp)
@@ -26,7 +28,7 @@ SPADE.addClusterToFCS <- function(infilename, outfilename, clusterfilename,
     cluster_params <- parameters(cluster_fcs)
     cluster_pd     <- pData(cluster_params)
     
-    c_idxs <- match(cols, cluster_pd$desc)
+    c_idxs <- match(cols, cluster_pd$name)
     na.fail(c_idxs)
  
     # Assign observations to clusters

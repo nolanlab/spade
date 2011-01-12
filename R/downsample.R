@@ -13,9 +13,9 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
 
     # Select out the desired columns
     if (is.null(cols)) {
-		cols <- as.vector(pd$desc) 
+		cols <- as.vector(pd$name) 
     }
-    idxs <- match(cols,pd$desc)
+    idxs <- match(cols,pd$name)
     if (any(is.na(idxs))) { 
 		stop("Invalid column specifier") 
     }
@@ -65,7 +65,7 @@ SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, ta
     params <- parameters(in_fcs);
     pd     <- pData(params);
 
-    d_idx <- match("density",pd$desc)
+    d_idx <- match("density",pd$name)
     if (is.na(d_idx)) {
 	stop("No density parameter in FCS file")
     }

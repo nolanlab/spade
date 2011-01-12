@@ -20,7 +20,7 @@ Wildcard pattern to match file if \code{files} is a director
 Directory where output files are written. Will be created if it does not exist.
 }
   \item{cluster_cols}{
-Usually a vector of strings specifying the columns to be used in the clustering, e.g., c("115-CD45","110-CD3"). Strings will be matched against the parameter descriptions extracted from the FCS file. The default=NULL will use all parameters.
+Usually a vector of strings specifying the columns to be used in the clustering, e.g., c("(Cd110)D","(Cs111)D"). Strings will be matched against the parameter names extracted from the FCS file. The default=NULL will use all parameters.
 }
   \item{arcsinh_cofactor}{
 Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
