@@ -459,7 +459,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			# Plot the tree, with legend showing the gradient
 			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
 	    
-			plot(graph, layout=graph_l, vertex.shape="circle", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA) 
+			plot(graph, layout=graph_l, vertex.shape="circle", edge.color="grey", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
 			
 			# Substitute pretty attribute names
 			if (length(grep("median", attrs[i])))
