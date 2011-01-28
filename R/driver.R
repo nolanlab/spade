@@ -381,7 +381,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -467,7 +467,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			# Plot the tree, with legend showing the gradient
 			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
 	    
-			plot(graph, layout=graph_l, vertex.shape="circle", edge.color="black", vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
+			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
 			
 			# Substitute pretty attribute names
 			if (length(grep("median", attrs[i])))

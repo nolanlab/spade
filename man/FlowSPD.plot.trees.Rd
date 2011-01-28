@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold|ratio", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1)
+SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold|ratio", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey")
 }
 \arguments{
   \item{files}{
@@ -36,6 +36,10 @@ A string (either "global" or "local"), specifying color scale normalization.  Se
 }
   \item{size_scale_factor}{
 A scale factor for node size in drawing. Current function for node size: \code{percenttotal[i]/(max(percenttotal)^(1/size_scale_factor)) * 3 + 2}
+}
+  \item{edge.color}{
+Set the edge color. See \code{igraph.plotting} for more details.
+}
 }
 \details{
 }
