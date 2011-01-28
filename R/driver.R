@@ -97,12 +97,14 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			# Compute the fold change compared to reference medians
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
 			fold <- b$medians[cc,,drop=FALSE] - reference_medians$medians[cc,,drop=FALSE]
+			
+			count_ratio <- b$count[cc,,drop=FALSE] / reference_medians$count[cc,,drop=FALSE]
 
 			dimnames(fold) <- list(cc, colnames(b$medians))
 			b <- list(count=b$count, fold=fold)		
 
 			# Merge the fold-change columns with the count, frequency, and median columns
-			ab <- list(count = a$count, percent = a$percent, median = a$median, fold = b$fold)
+			ab <- list(count = a$count, percent = a$percent, ratio = count_ratio, median = a$median, fold = b$fold)
 
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
 		} else {
@@ -317,7 +319,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
-SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", normalize="global") {
+SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", normalize="global") {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -379,7 +381,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1) {
+SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1) {
     if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -443,7 +445,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 					boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
-			if (length(grep("median|percent", attrs[i])))
+			if (length(grep("median|percent|ratio", attrs[i])))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change values
@@ -454,6 +456,12 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr)] <- "grey"
+			if (grepl("ratio", attrs[i])) {
+				# Color nodes with "infinite" ratios black
+				color[is.na(attr) & V(graph)$count > 0] <- "black"
+			}
+			
+			
 			V(graph)$color <- color
 	    
 			# Plot the tree, with legend showing the gradient
@@ -466,9 +474,11 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 				attrs[i] <- sub("median", "Median of ", attrs[i])
 			else if (length(grep("fold", attrs[i])))
 				attrs[i] <- sub("fold", "Arcsinh diff. of ", attrs[i])
-			else
+			else if (grepl("percent", attrs[i]))
 				attrs[i] <- sub("percent", "Percent freq. of ", attrs[i])
-						
+			else if (grepl("ratio", attrs[i]))
+				attrs[i] <- "Ratio of cluster cell count"
+
 			# Make parameters used for clustering obvious
 			if (length(grep("_clust$", attrs[i])))
 				attrs[i] <- sub("_clust", "\n(Used for tree-building)", attrs[i])
