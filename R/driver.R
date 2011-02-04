@@ -98,13 +98,14 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
 			fold <- b$medians[cc,,drop=FALSE] - reference_medians$medians[cc,,drop=FALSE]
 			
-			count_ratio <- b$count[cc,,drop=FALSE] / reference_medians$count[cc,,drop=FALSE]
+			pct_ratio <- log10((b$count[cc,,drop=FALSE] / reference_medians$count[cc,,drop=FALSE])*(sum(reference_medians$count) / sum(b$count)))
+			colnames(pct_ratio) <- c("percenttotalaslog")
 
 			dimnames(fold) <- list(cc, colnames(b$medians))
 			b <- list(count=b$count, fold=fold)		
 
 			# Merge the fold-change columns with the count, frequency, and median columns
-			ab <- list(count = a$count, percent = a$percent, ratio = count_ratio, median = a$median, fold = b$fold)
+			ab <- list(count = a$count, percent = a$percent, ratio = pct_ratio, median = a$median, fold = b$fold)
 
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
 		} else {
@@ -440,15 +441,15 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			if (!is.null(scale))
 				boundary <- scale
 			else if (normalize == "global") { # Scale to global min/max
-					boundary <- boundaries[[attrs[i]]] # Recall trimmed global boundary for this attribute
+				boundary <- boundaries[[attrs[i]]] # Recall trimmed global boundary for this attribute
 			} else # Scale to local min/max
-					boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
+				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
-			if (length(grep("median|percent|ratio", attrs[i])))
+			if (length(grep("^median|percent", attrs[i])))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
-				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change values
+				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change and ratio values
 			
 			boundary <- round(boundary, 2) # Round boundary values to 2 digits of precision so scale looks nice
 				
@@ -456,7 +457,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr)] <- "grey"
-			if (grepl("ratio", attrs[i])) {
+			if (grepl("^ratio", attrs[i])) {
 				# Color nodes with "infinite" ratios black
 				color[is.na(attr) & V(graph)$count > 0] <- "black"
 			}
@@ -470,14 +471,14 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
 			
 			# Substitute pretty attribute names
-			if (length(grep("median", attrs[i])))
+			if (length(grep("^median", attrs[i])))
 				attrs[i] <- sub("median", "Median of ", attrs[i])
-			else if (length(grep("fold", attrs[i])))
+			else if (length(grep("^fold", attrs[i])))
 				attrs[i] <- sub("fold", "Arcsinh diff. of ", attrs[i])
-			else if (grepl("percent", attrs[i]))
+			else if (grepl("^percent", attrs[i]))
 				attrs[i] <- sub("percent", "Percent freq. of ", attrs[i])
-			else if (grepl("ratio", attrs[i]))
-				attrs[i] <- "Ratio of cluster cell count"
+			else if (grepl("^ratiopercenttotalaslog", attrs[i]))
+				attrs[i] <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
 
 			# Make parameters used for clustering obvious
 			if (length(grep("_clust$", attrs[i])))
