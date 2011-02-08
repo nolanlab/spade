@@ -7,7 +7,7 @@ Normalize tree attributes
 Normalize SPADE attributes, e.g. medians, fold-change, within a file or across files.
 }
 \usage{
-SPADE.normalize.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold", normalize = "global")
+SPADE.normalize.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold|ratio", normalize = "global")
 }
 \arguments{
   \item{files}{
