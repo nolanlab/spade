@@ -7,11 +7,14 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(files, file_pattern = "*.gml", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold|ratio", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey")
+SPADE.plot.trees(graph, files, file_pattern = "*anno.Rsave", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold|logratio", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey")
 }
 \arguments{
+  \item{graph}{
+iGraph graph object
+}
   \item{files}{
-Either a vector of gml graph files or a directory. If a directory, all of the files matching the \code{pattern} wildcard pattern are processesd.
+Either a vector of save annotation files or a directory. If a directory, all of the files matching the \code{pattern} wildcard pattern are processesd.
 }
   \item{file_pattern}{
 Wildcard pattern to match files if \code{files} is a directory.

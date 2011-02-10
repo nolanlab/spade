@@ -3,11 +3,10 @@ SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
     SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL, comp=TRUE) {
+SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL, comp=TRUE) {
 
 	data  <- c()
-	c_ids <- c()
-
+	
 	files <- as.vector(files)
 	for (f in files) {
 		# Load in FCS file
@@ -32,32 +31,31 @@ SPADE.markerMedians <- function(files, cols=NULL, arcsinh_cofactor=5.0, cluster_
 		
 		data <- rbind(data, in_data[, idxs,drop=FALSE])
 		colnames(data) <- sapply(idxs,function(x) { 
-			name <- paste(pd$name[x],pd$desc[x],sep="_")
+			name <- ifelse(pd$name[x] != pd$desc[x], paste(pd$name[x],pd$desc[x],sep="_"), pd$name[x]) 
 			if (pd$name[x] %in% cluster_cols)
 				name <- paste(name,"clust",sep="_")
 			name
 		})
 	}
-	   
-	count      <- c()
-	medians    <- c()
+	 	
+	clst <- data[,"cluster"]
+	data <- data[,colnames(data)!="cluster",drop=FALSE]
 
-	c_asn <- data[,"cluster_cluster"]
-	c_ids <- sort(unique(c_asn))
-	data  <- data[,colnames(data)!="cluster_cluster",drop=FALSE]
-	
-	for (i in c_ids) {
-		data_s  <- asinh(subset(data, c_asn == i) / arcsinh_cofactor)
-		count   <- rbind(count, nrow(data_s))
-		medians <- rbind(medians, apply(data_s, 2, median))
+	ids  <- 1:num.clusters
+	if (any(is.na(match(unique(clst),ids)))) {
+		stop("More clusters in FCS files than indicated")
 	}
-	
-	colnames(count)   <- c("count")
-	rownames(count)   <- c_ids
-	colnames(medians) <- colnames(data)
-	rownames(medians) <- c_ids
 
-    list(count=count, medians=medians)
+	count <- matrix(0,  nrow=num.clusters, ncol=1, dimnames=list(ids, "count"))
+	medians <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
+	for (i in ids) {
+		data_s  <- asinh(subset(data, clst == i) / arcsinh_cofactor)
+		count[i,1]  <- nrow(data_s)
+		medians[i,] <- apply(data_s, 2, median)
+	} 
+	percenttotal <- matrix((count / sum(count)) * 100.0, nrow=num.clusters, ncol=1, dimnames=list(ids, "percenttotal"))
+
+    list(count=count, medians=medians, percenttotal=percenttotal)
 }
 
 SPADE.layout.arch <-  function(mst_graph) {

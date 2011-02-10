@@ -119,11 +119,11 @@ LAYOUT_FUNCTION=SPADE.layout.arch
 SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=ARCSINH_COFACTOR, layout=LAYOUT_FUNCTION, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 
 LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
-
+MST_GRAPH <- read.graph(paste(OUTPUT_DIR,"mst.gml",sep=""),format="gml")
 if (NORMALIZE_GML_FILES) {
 	SPADE.normalize.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm",sep=""),normalize=NORMALIZE)
-	SPADE.plot.trees(paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm/pdf",sep=""),scale=c(-1,1))
+	SPADE.plot.trees(MST_GRAPH,paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm/pdf",sep=""),scale=c(-1,1))
 }
-SPADE.plot.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
+SPADE.plot.trees(MST_GRAPH,OUTPUT_DIR,file_pattern="*fcs*Rsave",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
 
 Sys.unsetenv("OMP_NUM_THREADS")

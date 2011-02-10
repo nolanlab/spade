@@ -15,7 +15,23 @@ SPADE.normalize.out_dir <- function(out_dir) {
 	out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
 }
 
-# Driver convenience functions
+SPADE.flattenAnnotations <- function(annotations) {
+	stopifnot(is.list(annotations))
+	flat <- NULL
+	for (i in seq_along(annotations)) {	
+		df <- data.frame(annotations[[i]])
+		
+		to_paste <- names(annotations)[i] != colnames(df)
+		if (any(to_paste))
+			colnames(df) <- paste(names(annotations)[i],colnames(df),sep="")
+	
+		if (is.null(flat))
+			flat <- df
+		else
+			flat <- cbind(flat, df)
+	}
+	flat
+}
 
 SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000,comp=TRUE) {
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -24,15 +40,8 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	if (length(files) == 0) {
 		stop("No input files found")
 	} 
-	out_dir_info <- file.info(out_dir)
-		if (is.na(out_dir_info$isdir)) {
-			dir.create(out_dir)
-		}
-	if (!file.info(out_dir)$isdir) {
-		stop(paste("out_dir:",out_dir,"is not a directory"))
-	}
-	out_dir <- paste(SPADE.strip.sep(out_dir),.Platform$file,sep="")
-
+	out_dir <- SPADE.normalize.out_dir(out_dir)
+	
 	density_files <- c()
 	sampled_files <- c()
 	for (f in files) {
@@ -70,54 +79,44 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	}
 
 	graph  <- read.graph(graph_file, format="gml")
-	V(graph)$count        <- as.integer(0)   # Initialize counts and percent total for all nodes to zero
-	V(graph)$percenttotal <- 0.0
-	
 
+	# Compute the layout once for the MST, write out for use by other functions
 	layout_table <- layout(graph)
 	write.table(layout_table,paste(out_dir,file="layout.table",sep=""),row.names = FALSE,col.names = FALSE)
 
 	reference_medians <- NULL
 	if (!is.null(reference_files)) {
 		reference_files   <- sapply(as.vector(reference_files), function(rf) { paste(out_dir, rf, ".density.fcs.cluster.fcs",sep=""); })
-		reference_medians <- SPADE.markerMedians(reference_files, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+		reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 	}
 
 	for (f in sampled_files) {
+		cat("Computing medians for file:",f,"\n")
+		
+		anno <- list()
 		if (!is.null(reference_medians)) {	# If a reference file is specified		
-			cat("Computing medians for file:",f,"\n")
-			# Compute the median marker intensities in each node
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-			
-			# Compute the overall cell frequency per node
-			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
-			
-			cat("Computing fold change for file:",f,"\n")
-			b <- SPADE.markerMedians(f, cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)	
-
+			# Compute the median marker intensities in each node, including the overall cell frequency per node
+			a <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+						
 			# Compute the fold change compared to reference medians
-			cc <- rownames(a$medians)[!is.na(match(rownames(b$medians),rownames(reference_medians$medians)))]  # Common clusters
-			fold <- b$medians[cc,,drop=FALSE] - reference_medians$medians[cc,,drop=FALSE]
+			cat("Computing fold change for file:",f,"\n")
+			b <- SPADE.markerMedians(f, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+			fold  <- b$medians - reference_medians$medians
 			
-			pct_ratio <- log10((b$count[cc,,drop=FALSE] / reference_medians$count[cc,,drop=FALSE])*(sum(reference_medians$count) / sum(b$count)))
-			colnames(pct_ratio) <- c("percenttotalaslog")
-
-			dimnames(fold) <- list(cc, colnames(b$medians))
-			b <- list(count=b$count, fold=fold)		
+			ratio <- log10(b$percenttotal / reference_medians$percenttotal); colnames(ratio) <- c("logratiopercenttotal")
+			is.na(ratio) <- b$count == 0 || reference_medians$count == 0
 
 			# Merge the fold-change columns with the count, frequency, and median columns
-			ab <- list(count = a$count, percent = a$percent, ratio = pct_ratio, median = a$median, fold = b$fold)
-
-			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=ab), paste(f,".medians.gml",sep=""), format="gml")
+			anno <- list(count = a$count, percenttotal = a$percenttotal, logratiopercenttotal = ratio, median = a$median, fold = fold)	
 		} else {
-			cat("Computing medians for file:",f,"\n")
-			a <- SPADE.markerMedians(f, cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-			
-			# Compute the overall cell frequency per node
-			a[["percent"]] <- a$count / sum(a$count) * 100; colnames(a[["percent"]]) <- c("total");
-			
-			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=a), paste(f,".medians.gml",sep=""), format="gml")
+			# Compute the median marker intensities in each node, including the overall cell frequency per node	
+			anno <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 		}
+
+		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
+		anno <- SPADE.flattenAnnotations(anno)
+		save(anno, file=paste(f,"anno.Rsave",sep="."))	
+
 	}
 
 	invisible(NULL)
@@ -322,6 +321,9 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", normalize="global") {
+	stop("Temporarily out of service")
+
+	
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
     }
@@ -383,33 +385,38 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
-    if (length(files) == 1 && file.info(files)$isdir) {
-		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
-    }
-	out_dir <- SPADE.normalize.out_dir(out_dir)
-
-	if (!is.null(scale) && (!is.vector(scale) || length(scale) !=2))
+SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|logratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
+    
+	if (!is.igraph(graph)) {
+		stop("Not a graph object")
+    }	
+	if (!is.null(scale) && (!is.vector(scale) || length(scale) !=2)) {
 		stop("scale must be a two element vector")
-
+	}
 	if (!is.vector(pctile_color) || length(pctile_color) != 2) {
 		stop("pctile_color must be a two element vector with values in [0,1]")
 	}
 
-	clean_attr <- function(attr) {
-		attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-		attr
+	if (length(files) == 1 && file.info(files)$isdir) {
+		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
+    }
+	out_dir <- SPADE.normalize.out_dir(out_dir)
+
+	load_attr <- function(save_file) {
+		l <- load(save_file)
+		stopifnot(l == "anno")
+		return(anno)
 	}
 
 	boundaries <- NULL
 	if (normalize == "global") {
 		boundaries <- c()  # Calculate ranges of all encountered attributes with trimmed outliers
-		all_attrs <- c()
+		all_attrs  <- c()
 		for (f in files) {
-			graph <- read.graph(f, format="gml")
-			attrs <- list.vertex.attributes(graph)
-			for (i in grep(attr_pattern, attrs)) {
-				all_attrs[[attrs[i]]] <- c(all_attrs[[attrs[i]]], clean_attr(get.vertex.attribute(graph,attrs[i])))
+			attrs <- load_attr(f)
+			for (i in grep(attr_pattern, colnames(attrs))) {
+				n <- colnames(attrs)[i]
+				all_attrs[[n]] <- c(all_attrs[[n]], attrs[,i])
 			}
 		}
 		for (i in seq_along(all_attrs)) {
@@ -417,37 +424,35 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		}
 	}
 
+	if (is.function(layout))
+		graph_l <- layout(graph)
+	else
+		graph_l <- layout	
+
     jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
     colorscale <- jet.colors(100)
 
     for (f in files) {
-		graph <- read.graph(f, format="gml")
-		attrs <- list.vertex.attributes(graph)
-
-		if (is.function(layout))
-			graph_l <- layout(graph)
-		else
-			graph_l <- layout	
-
-		vsize <- V(graph)$percenttotal
-		vsize[vsize == Inf | vsize == -Inf] <- NA  # Clean up bogus values	
+		attrs <- load_attr(f)
+	
+		vsize <- attrs$percenttotal
 		vsize <- vsize/(max(vsize,na.rm=TRUE)^(1/size_scale_factor)) * 3 + 2
 		vsize[is.na(vsize)] <- 1
 
-		for (i in grep(attr_pattern, attrs)) {
-			# Compute the color for each vertex using color gradient scaled from min to max
-			attr <- get.vertex.attribute(graph,attrs[i])
+		for (i in grep(attr_pattern, colnames(attrs))) {
+			name <- colnames(attrs)[i]
 			
-			attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
+			# Compute the color for each vertex using color gradient scaled from min to max
+			attr <- attrs[,i]
 			if (!is.null(scale))
 				boundary <- scale
 			else if (normalize == "global") { # Scale to global min/max
-				boundary <- boundaries[[attrs[i]]] # Recall trimmed global boundary for this attribute
+				boundary <- boundaries[[name]] # Recall trimmed global boundary for this attribute
 			} else # Scale to local min/max
 				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
 			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
-			if (length(grep("^median|percent", attrs[i])))
+			if (length(grep("^median|percent", name)))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change and ratio values
@@ -458,34 +463,33 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr)] <- "grey"
-			if (grepl("^ratio", attrs[i])) {
+			if (grepl("^logratio", name)) {
 				# Color nodes with "infinite" ratios black
-				color[is.na(attr) & V(graph)$count > 0] <- "black"
+				color[is.na(attr) & attrs$count > 0] <- "black"
 			}
-			
-			
+				
 			V(graph)$color <- color
 	    
 			# Plot the tree, with legend showing the gradient
-			pdf(paste(out_dir,basename(f),".",attrs[i],".pdf",sep=""))
+			pdf(paste(out_dir,basename(f),".",name,".pdf",sep=""))
 	    
 			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
 			
 			# Substitute pretty attribute names
-			if (length(grep("^median", attrs[i])))
-				attrs[i] <- sub("median", "Median of ", attrs[i])
-			else if (length(grep("^fold", attrs[i])))
-				attrs[i] <- sub("fold", "Arcsinh diff. of ", attrs[i])
-			else if (grepl("^percent", attrs[i]))
-				attrs[i] <- sub("percent", "Percent freq. of ", attrs[i])
-			else if (grepl("^ratiopercenttotalaslog", attrs[i]))
-				attrs[i] <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
+			if (length(grep("^median", name)))
+				name <- sub("median", "Median of ", name)
+			else if (length(grep("^fold", name)))
+				name <- sub("fold", "Arcsinh diff. of ", name)
+			else if (grepl("^percent", name))
+				name <- sub("percent", "Percent freq. of ", name)
+			else if (grepl("^logratio", name))
+				name <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
 
 			# Make parameters used for clustering obvious
-			if (length(grep("_clust$", attrs[i])))
-				attrs[i] <- sub("_clust", "\n(Used for tree-building)", attrs[i])
+			if (grepl("_clust$", name))
+				name <- sub("_clust", "\n(Used for tree-building)", name)
 			
-			title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=attrs[i], sep="\n"))
+			title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=name, sep="\n"))
 			subplot(
 				image(
 					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
@@ -501,6 +505,7 @@ SPADE.plot.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SP
 }
 
 SPADE.workflow.concat.FCS <- function(files, file_pattern="*.density.fcs.cluster.fcs", out_dir=".", cols=NULL, layout=SPADE.layout.arch, arcsinh_cofactor=5.0, in_graph_file="mst.gml", out_graph_file="concat.gml", cluster_cols=NULL, comp=TRUE)  {
+	stop("Temporarily out of service. A candidate for deprecation.")
 	if (length(files) == 1 && file.info(files)$isdir) {
 		in_graph_file <- paste(SPADE.strip.sep(files),in_graph_file,sep=.Platform$file)
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
