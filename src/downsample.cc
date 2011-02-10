@@ -7,6 +7,11 @@
 #include <algorithm>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+
 #include "util.h"
 #include "prng.h"
 
@@ -29,12 +34,17 @@ namespace {
 	PRNG prng(num_samples);
 	
 	Dist_t* min_dists = new Dist_t[num_samples];
+
+	#ifdef _OPENMP
 	#pragma omp parallel for shared(min_dists)
+	#endif
 	for (size_t i=0; i<num_samples; i++) {
 	    uint32_t idx;
 	    
 	    // Potential for race condition in PRNG state
-	    #pragma omp critical
+		#ifdef _OPENMP
+		#pragma omp critical
+		#endif
 	    {
 		idx = (prng.sample(num_samples+1)-1);
 	    }
@@ -62,7 +72,9 @@ namespace {
     count_neighbors(Data_t* data, size_t dim, size_t obs, Dist_t kernel_width, Dist_t apprx_width, Count_t* densities) 
     {
 		std::fill(densities, densities+obs, 0);
-#pragma omp parallel for shared(densities)	
+#ifdef _OPENMP
+		#pragma omp parallel for shared(densities)	
+#endif
 		for (size_t i=0; i<obs; i++) {	    
 			if (densities[i] > 0)
 				continue;

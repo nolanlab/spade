@@ -6,6 +6,9 @@
 #include <limits>
 #include <algorithm>
 #include <vector>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "util.h"
 #include "prng.h"
@@ -27,7 +30,9 @@ namespace {
     void
     assign_cluster( const Data_t* data, const Data_t* cluster_data, Idx_t* cluster_assign,
 		    size_t obs, size_t cls, size_t dim, Idx_t* assign) {
+#ifdef _OPENMP
 	#pragma omp parallel for shared(assign)
+#endif
 	for (size_t i=0; i<obs; i++) {
 	    const Data_t* pt = &data[i*dim];
 	   

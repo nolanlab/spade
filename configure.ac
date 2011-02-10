@@ -1,4 +1,7 @@
-AC_INIT([spade], 0.10)
+AC_INIT([spade], 0.20)
+AC_PREREQ([2.59])
+
+m4_include([m4/ac_openmp.m4])
 
 # Find the compiler and compiler flags to use
 : ${R_HOME=`R RHOME`}
@@ -15,11 +18,18 @@ AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_CXXCPP
 
+
+	
 AC_LANG_PUSH([C++])
+
+AC_OPENMP
+AC_SUBST(OPENMP_CXXFLAGS,${OPENMP_CXXFLAGS})
+
 # Check if parallel STL is available (only in newer g++ versions)
 AC_CHECK_HEADERS([parallel/algorithm],
-	   [AC_DEFINE([HAVE_PARALLEL_STL],[1],[Define if parallel STL available.])],
-	   [AC_MSG_RESULT("Parallel STL not found using default")])
+		[AC_DEFINE([HAVE_PARALLEL_STL],[1],[Define if parallel STL available.])],
+		[AC_MSG_RESULT("Parallel STL not found using default")])
+
 AC_LANG_POP([C++])
 
 AC_SUBST(FLOWSPD_CXXFLAGS,${DEFS})
