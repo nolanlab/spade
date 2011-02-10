@@ -103,11 +103,11 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			b <- SPADE.markerMedians(f, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 			fold  <- b$medians - reference_medians$medians
 			
-			ratio <- log10(b$percenttotal / reference_medians$percenttotal); colnames(ratio) <- c("logratiopercenttotal")
-			is.na(ratio) <- b$count == 0 || reference_medians$count == 0
+			ratio <- log10(b$percenttotal / reference_medians$percenttotal); colnames(ratio) <- c("percenttotalratiolog")
+			is.na(ratio) <- b$count == 0 | reference_medians$count == 0
 
 			# Merge the fold-change columns with the count, frequency, and median columns
-			anno <- list(count = a$count, percenttotal = a$percenttotal, logratiopercenttotal = ratio, median = a$median, fold = fold)	
+			anno <- list(count = a$count, percenttotal = a$percenttotal, percenttotalratiolog = ratio, median = a$median, fold = fold)	
 		} else {
 			# Compute the median marker intensities in each node, including the overall cell frequency per node	
 			anno <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
@@ -385,7 +385,7 @@ SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layo
 
 }
 
-SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|logratio", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
+SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
     
 	if (!is.igraph(graph)) {
 		stop("Not a graph object")
@@ -480,9 +480,9 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 				name <- sub("median", "Median of ", name)
 			else if (length(grep("^fold", name)))
 				name <- sub("fold", "Arcsinh diff. of ", name)
-			else if (grepl("^percent", name))
+			else if (grepl("^percenttotal$", name))
 				name <- sub("percent", "Percent freq. of ", name)
-			else if (grepl("^logratio", name))
+			else if (grepl("^percenttotalratiolog$", name))
 				name <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
 
 			# Make parameters used for clustering obvious
