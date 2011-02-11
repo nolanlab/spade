@@ -93,8 +93,14 @@ namespace {
 
 			// Potential race condition on other density entries, use atomic
 			// update to be safe
-			for (size_t j=0; j<apprxs.size(); j++)
+			for (size_t j=0; j<apprxs.size(); j++) {
+#ifdef _OPENMP
 				__sync_bool_compare_and_swap(densities+apprxs[j],0,c); //densities[apprxs[j]] = c;
+#else
+				densities[apprxs[j]] = c;
+#endif
+			
+			}
 			densities[i] = c;
 		}
 
