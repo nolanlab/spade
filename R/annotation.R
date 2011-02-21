@@ -207,9 +207,6 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 		v_attr <- list.vertex.attributes(graph)
 		v_attr_g <- v_attr[grep("graphics[.]",v_attr)]  # graphics attributes
 		v_attr <- setdiff(v_attr, c(v_attr_g, "id"))  
-		if (length(grep("[.]",v_attr)) > 0) {
-		    stop("Unsupported struct in vertex attributes")
-		}
 		
 		for (v in V(graph)) {
 		    writeLines("node [",con=file)
