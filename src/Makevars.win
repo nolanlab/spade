@@ -1,2 +1,2 @@
-PKG_CXXFLAGS=-fopenmp 
-PKG_LIBS=-mthreads -lgomp -lpthread
+PKG_CXXFLAGS=
+PKG_LIBS=

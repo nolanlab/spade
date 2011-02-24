@@ -11,6 +11,10 @@
 #include <set>
 #include <queue>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #ifdef HAVE_PARALLEL_STL
 #include <parallel/algorithm>
 #define PARALLEL_NAMESPACE std::__parallel
@@ -233,19 +237,25 @@ namespace {
 				into->set_merged(true);
 
 				PQ pq(fold);
+#ifdef _OPENMP
 				#pragma omp parallel shared(c_beg, c_end, into)
+#endif
 				{
 					// Scan all "valid" clusters to fill in queue of nearest neighbors 
 					PQ pq_p(fold);  // "private" priority queue
-				
+
+#ifdef _OPENMP
 					#pragma omp for nowait
+#endif
 					for (size_t i=0; i < (c_end - c_beg); i++) {
 						ACluster* from = c_beg + i;
 						if (into != from)
 							into->push_on_pq(from, pq_p);
 					}
 
+#ifdef _OPENMP
 					#pragma omp critical
+#endif
 					{
 						pq.push(pq_p);
 					}
