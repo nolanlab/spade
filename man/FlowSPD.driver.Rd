@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, comp=TRUE) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, comp=TRUE, pctile_color=c(0.02,0.98)) 
 }
 \arguments{
   \item{files}{
@@ -54,6 +54,9 @@ Desired number of samples to be used in clustering.
 }
   \item{comp}{
 Apply compensation matrix if present in SPILL or SPILLOVER keywords
+}
+ \item{pctile_color}{
+A two element vector specifying lower and upper percentiles that should be used to set the color scale. Values below and above these percentiles will be forced to the 'smallest' and 'largest' color respectively. Not in effect if 'scale' is specified. Relevant for downstream tools that used global value ranges produced by driver.
 }
 }
 \details{

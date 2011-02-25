@@ -33,7 +33,7 @@ SPADE.flattenAnnotations <- function(annotations) {
 	flat
 }
 
-SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000,comp=TRUE) {
+SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, comp=TRUE, pctile_color=c(0.02,0.98)) {
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
 	}
@@ -92,34 +92,43 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 	}
 
+	# Track all attributes to compute global limits
+	attr_values <- list()
+
 	for (f in sampled_files) {
+		# Compute the median marker intensities in each node, including the overall cell frequency per node	
 		cat("Computing medians for file:",f,"\n")
+		anno <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 		
-		anno <- list()
-		if (!is.null(reference_medians)) {	# If a reference file is specified		
-			# Compute the median marker intensities in each node, including the overall cell frequency per node
-			a <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-						
+		if (!is.null(reference_medians)) {	# If a reference file is specified								
 			# Compute the fold change compared to reference medians
 			cat("Computing fold change for file:",f,"\n")
-			b <- SPADE.markerMedians(f, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-			fold  <- b$medians - reference_medians$medians
+			fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+			fold <- fold_anno$medians - reference_medians$medians
 			
-			ratio <- log10(b$percenttotal / reference_medians$percenttotal); colnames(ratio) <- c("percenttotalratiolog")
-			is.na(ratio) <- b$count == 0 | reference_medians$count == 0
+			ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
+			colnames(ratio) <- c("percenttotalratiolog")
+			is.na(ratio) <- fold_anno$count == 0 | reference_medians$count == 0
 
 			# Merge the fold-change columns with the count, frequency, and median columns
-			anno <- list(count = a$count, percenttotal = a$percenttotal, percenttotalratiolog = ratio, median = a$median, fold = fold)	
-		} else {
-			# Compute the median marker intensities in each node, including the overall cell frequency per node	
-			anno <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+			anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold))	
 		}
 
 		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
+		
+		# We save an R native version of the annotations to simpify plotting, and other downstream operations
 		anno <- SPADE.flattenAnnotations(anno)
+		for (c in colnames(anno)) {
+			attr_values[[c]] <- c(attr_values[[c]], anno[,c])
+		}
+		
 		save(anno, file=paste(f,"anno.Rsave",sep="."))	
-
 	}
+
+	# Compute the global limits (cleaning up attribute names to match those in GML files)
+	attr_ranges <- t(sapply(attr_values, function(x) { quantile(x, probs=c(0.00, pctile_color, 1.00), na.rm=TRUE) }))
+	rownames(attr_ranges) <- sapply(rownames(attr_ranges), function(x) { gsub("[^A-Za-z0-9_]","",x) })
+	write.table(attr_ranges, paste(out_dir,"global_boundaries.table",sep=""), col.names=FALSE)
 
 	invisible(NULL)
 }
@@ -322,70 +331,6 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
   return(invisible(tmp.par))
 }
 
-SPADE.normalize.trees <- function(files, file_pattern="*.gml", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold|ratio", normalize="global") {
-	stop("Temporarily out of service")
-
-	
-	if (length(files) == 1 && file.info(files)$isdir) {
-		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
-    }
-	out_dir <- SPADE.normalize.out_dir(out_dir)
-
-
-	clean_attr <- function(attr) {
-		attr[attr == Inf | attr == -Inf] <- NA  # Clean up bogus values ...
-		attr
-	}
-
-	attr_ranges <- function(file) {
-		ar <- c()	
-		graph <- read.graph(f, format="gml")
-		attrs <- list.vertex.attributes(graph)
-		for (i in grep(attr_pattern, attrs)) {
-			attr <- clean_attr(get.vertex.attribute(graph,attrs[i]))			
-			ar[[attrs[i]]] <- range(ar[[attrs[i]]], attr, na.rm=TRUE)
-		}
-		ar
-	}
-
-	sf_fn <- NULL
-	if (normalize == "global") {
-		gr <- c()  # Ranges of all encountered attributes
-		for (f in files) {
-			ar <- attr_ranges(f)
-			for (i in seq_along(ar)) { n <- names(ar[i]); gr[[n]] <- range(gr[[n]], ar[i], na.rm=TRUE); }
-		}			
-		sf_fn <- function(a_name, a_vals) { 
-			ifelse(is.null(gr[[a_name]]),max(abs(range(a_vals, na.rm=TRUE))), max(abs(gr[[a_name]])))
-		}
-	} else if (normalize == "local") {
-		sf_fn <- function(a_name, a_vals) {
-			max(abs(range(a_vals, na.rm=TRUE)))
-		}
-	} else
-		stop("Unsupported kind of normalization")
-			
-
-	for (f in files) {
-		graph <- read.graph(f, format="gml")
-		attrs <- list.vertex.attributes(graph)
-				
-		if (is.function(layout))
-			graph_l <- layout(graph)
-		else
-			graph_l <- layout	
-		
-		for (i in grep(attr_pattern, attrs)) {
-			attr <- clean_attr(get.vertex.attribute(graph,attrs[i]))
-			sf <- sf_fn(attrs[i], attr)
-			if (sf != 0.0)
-				attr <- scale(attr, center=0.0, scale=sf)
-			graph <- set.vertex.attribute(graph, attrs[i], value=attr)
-		}
-		SPADE.write.graph(SPADE.annotateGraph(graph, layout=graph_l), paste(out_dir,basename(f),".",normalize,".norm.gml",sep=""), format="gml")
-	}
-
-}
 
 SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
     
@@ -401,7 +346,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
-    }
+  }
 	out_dir <- SPADE.normalize.out_dir(out_dir)
 
 	load_attr <- function(save_file) {
