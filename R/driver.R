@@ -82,6 +82,8 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 	# Compute the layout once for the MST, write out for use by other functions
 	layout_table <- layout(graph)
+	if (deparse(substitute(layout)) != "SPADE.layout.arch")  # The igraph internal layouts are much more compact than arch.layout
+		layout_table = layout_table * 50
 	write.table(layout_table,paste(out_dir,file="layout.table",sep=""),row.names = FALSE,col.names = FALSE)
 
 	reference_medians <- NULL
