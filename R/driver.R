@@ -33,7 +33,8 @@ SPADE.flattenAnnotations <- function(annotations) {
 	flat
 }
 
-SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, arcsinh_cofactor=5.0, layout=SPADE.layout.arch, median_cols=NULL, reference_files=NULL, fold_cols=NULL, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, comp=TRUE, pctile_color=c(0.02,0.98)) {
+SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=layout.kamada.kawai, pctile_color=c(0.02,0.98)) {
+
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
 	}
@@ -41,7 +42,22 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		stop("No input files found")
 	} 
 	out_dir <- SPADE.normalize.out_dir(out_dir)
-	
+
+	# Validate structure of panels
+	if (!is.null(panels))  {
+		if (!is.list(panels))
+			stop("Invalid panels argument, see function documentation")
+		lapply(panels, function(x) {
+			if (!is.list(x) || !all(c("panel_files", "median_cols") %in% names(x)))
+				stop("Invalid panel found, see function documentation for proper panel structure")
+			if (!all(x$panel_files %in% basename(files)))
+				stop("Panel files must be a subset of analysis files")
+			if (!is.null(x$reference_files) && !all(x$reference_files %in% x$panel_files))
+				stop("Panel reference files must be a subset of panel files")
+		})
+	}
+
+	# Run downsampling/clustering/upsampling on all specified files 
 	density_files <- c()
 	sampled_files <- c()
 	for (f in files) {
@@ -85,46 +101,52 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	if (deparse(substitute(layout)) != "SPADE.layout.arch")  # The igraph internal layouts are much more compact than arch.layout
 		layout_table = layout_table * 50
 	write.table(layout_table,paste(out_dir,file="layout.table",sep=""),row.names = FALSE,col.names = FALSE)
-
-	reference_medians <- NULL
-	if (!is.null(reference_files)) {
-		reference_files   <- sapply(as.vector(reference_files), function(rf) { paste(out_dir, rf, ".density.fcs.cluster.fcs",sep=""); })
-		reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-	}
-
+	
 	# Track all attributes to compute global limits
 	attr_values <- list()
 
-	for (f in sampled_files) {
-		# Compute the median marker intensities in each node, including the overall cell frequency per node	
-		cat("Computing medians for file:",f,"\n")
-		anno <- SPADE.markerMedians(f, vcount(graph), cols=median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-		
-		if (!is.null(reference_medians)) {	# If a reference file is specified								
-			# Compute the fold change compared to reference medians
-			cat("Computing fold change for file:",f,"\n")
-			fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
-			fold <- fold_anno$medians - reference_medians$medians
-			
-			ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
-			colnames(ratio) <- c("percenttotalratiolog")
-			is.na(ratio) <- fold_anno$count == 0 | reference_medians$count == 0
-
-			# Merge the fold-change columns with the count, frequency, and median columns
-			anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold))	
-		}
-
-		SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
-		
-		# We save an R native version of the annotations to simpify plotting, and other downstream operations
-		anno <- SPADE.flattenAnnotations(anno)
-		for (c in colnames(anno)) {
-			attr_values[[c]] <- c(attr_values[[c]], anno[,c])
-		}
-		
-		save(anno, file=paste(f,"anno.Rsave",sep="."))	
+	if (is.null(panels)) {  # Initialize panels if NULL
+		panels <- list( list(panel_files=sampled_files, median_cols=NULL) )
 	}
+	
+	for (p in panels) {
+	
+		reference_medians <- NULL
+		if (!is.null(p$reference_files)) {
+			reference_files   <- sapply(as.vector(p$reference_files), function(f) { sampled_files[grep(f, sampled_files)[1]] })
+			reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+		}
 
+		for (f in as.vector(p$panel_files)) {
+			f <- sampled_files[grep(f, sampled_files)[1]]
+
+			# Compute the median marker intensities in each node, including the overall cell frequency per node	
+			cat("Computing medians for file:",f,"\n")
+			anno <- SPADE.markerMedians(f, vcount(graph), cols=p$median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+					
+			if (!is.null(reference_medians)) {	# If a reference file is specified								
+				# Compute the fold change compared to reference medians
+				cat("Computing fold change for file:",f,"\n")
+				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+				fold <- fold_anno$medians - reference_medians$medians
+				
+				ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
+				colnames(ratio) <- c("percenttotalratiolog")
+				is.na(ratio) <- fold_anno$count == 0 | reference_medians$count == 0
+
+				# Merge the fold-change columns with the count, frequency, and median columns
+				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold))	
+			}
+
+			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
+
+			# We save an R native version of the annotations to simpify plotting, and other downstream operations
+			anno <- SPADE.flattenAnnotations(anno)
+			for (c in colnames(anno)) { attr_values[[c]] <- c(attr_values[[c]], anno[,c]) }
+			save(anno, file=paste(f,"anno.Rsave",sep="."))	
+		}
+	}
+	
 	# Compute the global limits (cleaning up attribute names to match those in GML files)
 	attr_ranges <- t(sapply(attr_values, function(x) { quantile(x, probs=c(0.00, pctile_color, 1.00), na.rm=TRUE) }))
 	rownames(attr_ranges) <- sapply(rownames(attr_ranges), function(x) { gsub("[^A-Za-z0-9_]","",x) })
