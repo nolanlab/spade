@@ -420,13 +420,14 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			} else # Scale to local min/max
 				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
-			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
 			if (length(grep("^median|percent", name)))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change and ratio values
 			
 			boundary <- round(boundary, 2) # Round boundary values to 2 digits of precision so scale looks nice
+			
+			if (boundary[1] == boundary[2]) {  boundary <- c(boundary[1]-1, boundary[2]+1); }  # Prevent "zero" width gradients
 				
 			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
 		
