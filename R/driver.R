@@ -5,6 +5,7 @@ SPADE.strip.sep <- function(name) {
 }
 
 SPADE.normalize.out_dir <- function(out_dir) {
+	out_dir <- SPADE.strip.sep(out_dir)
 	out_dir_info <- file.info(out_dir)
 		if (is.na(out_dir_info$isdir)) {
 			dir.create(out_dir)
@@ -366,7 +367,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 		stop("pctile_color must be a two element vector with values in [0,1]")
 	}
 
-	if (length(files) == 1 && file.info(files)$isdir) {
+	if (length(files) == 1 && file.info(SPADE.strip.sep(files))$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))    
   }
 	out_dir <- SPADE.normalize.out_dir(out_dir)
