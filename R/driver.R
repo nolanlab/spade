@@ -114,12 +114,12 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	
 		reference_medians <- NULL
 		if (!is.null(p$reference_files)) {
-			reference_files   <- sapply(as.vector(p$reference_files), function(f) { sampled_files[grep(f, sampled_files)[1]] })
+			reference_files   <- sapply(as.vector(p$reference_files), function(f) { sampled_files[grep(f, sampled_files, fixed=TRUE)[1]] })
 			reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 		}
 
 		for (f in as.vector(p$panel_files)) {
-			f <- sampled_files[grep(f, sampled_files)[1]]
+			f <- sampled_files[grep(f, sampled_files, fixed=TRUE)[1]]
 
 			# Compute the median marker intensities in each node, including the overall cell frequency per node	
 			cat("Computing medians for file:",f,"\n")
