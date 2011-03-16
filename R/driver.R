@@ -355,7 +355,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|median|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
+SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|medians|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
     
 	if (!is.igraph(graph)) {
 		stop("Not a graph object")
@@ -421,7 +421,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			} else # Scale to local min/max
 				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
-			if (length(grep("^median|percent", name)))
+			if (length(grep("^medians|percent", name)))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change and ratio values
@@ -447,8 +447,8 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
 			
 			# Substitute pretty attribute names
-			if (length(grep("^median", name)))
-				name <- sub("median", "Median of ", name)
+			if (length(grep("^medians", name)))
+				name <- sub("medians", "Median of ", name)
 			else if (length(grep("^fold", name)))
 				name <- sub("fold", "Arcsinh diff. of ", name)
 			else if (grepl("^percenttotal$", name))
