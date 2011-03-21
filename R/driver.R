@@ -355,8 +355,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|medians|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey") {
-    
+SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|medians|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered") {
 	if (!is.igraph(graph)) {
 		stop("Not a graph object")
     }	
@@ -398,9 +397,16 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 		graph_l <- layout(graph)
 	else
 		graph_l <- layout	
-
-    jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
-    colorscale <- jet.colors(100)
+	
+	if (palette == "jet")
+		palette <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+    else
+    	if (palette == "bluered")
+    		palette <- colorRampPalette(c("blue", "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00", "red"))
+     	else
+     		stop("Please use a supported color palette.  Options are 'bluered' or 'jet'")    	
+    	
+    colorscale <- palette(100)
 
     for (f in files) {
 		attrs <- load_attr(f)
@@ -445,31 +451,32 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			pdf(paste(out_dir,basename(f),".",name,".pdf",sep=""))
 	    
 			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
-			
-			# Substitute pretty attribute names
-			if (length(grep("^medians", name)))
-				name <- sub("medians", "Median of ", name)
-			else if (length(grep("^fold", name)))
-				name <- sub("fold", "Arcsinh diff. of ", name)
-			else if (grepl("^percenttotal$", name))
-				name <- sub("percent", "Percent freq. of ", name)
-			else if (grepl("^percenttotalratiolog$", name))
-				name <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
 
-			# Make parameters used for clustering obvious
-			if (grepl("_clust$", name))
-				name <- sub("_clust", "\n(Used for tree-building)", name)
-			
-			title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=name, sep="\n"))
-			subplot(
-				image(
-					grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
-					xlab=ifelse(is.null(scale),paste("Range:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
-					ylab="", yaxt="n", xaxp=c(boundary,1)
-				),
-				x="right,bottom",size=c(1,.20)
-			)
-
+			if (!bare) {			
+				# Substitute pretty attribute names
+				if (length(grep("^medians", name)))
+					name <- sub("medians", "Median of ", name)
+				else if (length(grep("^fold", name)))
+					name <- sub("fold", "Arcsinh diff. of ", name)
+				else if (grepl("^percenttotal$", name))
+					name <- sub("percent", "Percent freq. of ", name)
+				else if (grepl("^percenttotalratiolog$", name))
+					name <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
+	
+				# Make parameters used for clustering obvious
+				if (grepl("_clust$", name))
+					name <- sub("_clust", "\n(Used for tree-building)", name)
+				
+				title(main=paste(strsplit(basename(f),".fcs")[[1]][1], sub=name, sep="\n"))
+				subplot(
+					image(
+						grad, c(1), matrix(1:length(colorscale),ncol=1), col=colorscale,
+						xlab=ifelse(is.null(scale),paste("Range:",pctile_color[1],"to",pctile_color[2],"pctile"),""),
+						ylab="", yaxt="n", xaxp=c(boundary,1)
+					),
+					x="right,bottom",size=c(1,.20)
+				)
+			}
 			dev.off()
 		}
     }
