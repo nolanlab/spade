@@ -11,16 +11,19 @@
 (
 IFS=$'\n'
 filenames=(`ls -1|grep .*median.*\.pdf$`)
-firstsamplename=(`printf "%s\n" "${filenames[@]}" | head -1 | sed 's/\.fcs.*//g'`)
 
 echo "=== Unique parameters: ==="
-uniqueparams=(`printf "%s\n" "${filenames[@]}" | grep "$firstsamplename" | sed 's/.*\.anno\.Rsave\.medians//g' | sed 's/\.pdf//g' |sort -u`)
+uniqueparams=(`printf "%s\n" "${filenames[@]}" | sed 's/.*\.anno\.Rsave\.medians//g' | sed 's/\.pdf//g' |sort -u`)
 printf "%s\n" "${uniqueparams[@]}"
+paramstotal=(`printf "%s\n" "${uniqueparams[@]}"|wc -l`)
+echo "Total unique parameters: $paramstotal"
 
 echo "=== Unique FCS files: ==="
 uniquefcs=(`printf "%s\n" "${filenames[@]}" | sed 's/\.fcs.*//g' | sort -u`)
 printf "%s\n" "${uniquefcs[@]}"
-
+fcstotal=(`printf "%s\n" "${uniquefcs[@]}"|wc -l`)
+echo "Total unique FCS files: $fcstotal"
+exit 0
 echo "=== Making folder for each parameter: ==="
 mkdir ../pdf_organized_by_parameter
 COUNT="0"
