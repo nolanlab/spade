@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(graph, files, file_pattern = "*anno.Rsave", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|median|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey")
+SPADE.plot.trees(graph, files, file_pattern = "*anno.Rsave", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|medians|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered")
 }
 \arguments{
   \item{graph}{
@@ -43,6 +43,11 @@ A scale factor for node size in drawing. Current function for node size: \code{p
   \item{edge.color}{
 Set the edge color. See \code{igraph.plotting} for more details.
 }
+  \item{bare}{
+Boolean specifying whether to omit titles and gradient legend.
+}
+  \item{palette}{
+A string (either "jet" or "bluered"), specifying color palette for nodes. "bluered" tends to show up better on LCD projectors.
 }
 \details{
 }

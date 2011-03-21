@@ -374,6 +374,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 	load_attr <- function(save_file) {
 		l <- load(save_file)
 		stopifnot(l == "anno")
+		# Note "anno" populated by load operation
 		return(anno)
 	}
 
