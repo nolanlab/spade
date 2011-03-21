@@ -23,7 +23,7 @@ uniquefcs=(`printf "%s\n" "${filenames[@]}" | sed 's/\.fcs.*//g' | sort -u`)
 printf "%s\n" "${uniquefcs[@]}"
 fcstotal=(`printf "%s\n" "${uniquefcs[@]}"|wc -l`)
 echo "Total unique FCS files: $fcstotal"
-exit 0
+
 echo "=== Making folder for each parameter: ==="
 mkdir ../pdf_organized_by_parameter
 COUNT="0"
