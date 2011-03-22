@@ -414,7 +414,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 	
 		vsize <- attrs$percenttotal
 		vsize <- vsize/(max(vsize,na.rm=TRUE)^(1/size_scale_factor)) * 3 + 2
-		vsize[is.na(vsize)] <- 1
+		vsize[is.na(vsize) | (attrs$count == 0)] <- 1
 
 		for (i in grep(attr_pattern, colnames(attrs))) {
 			name <- colnames(attrs)[i]
@@ -440,7 +440,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			grad <- seq(boundary[1], boundary[2], length.out=length(colorscale))
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
-			color[is.na(attr)] <- "grey"
+			color[is.na(attr) | (attrs$count == 0)] <- "grey"
 			if (grepl("^logratio", name)) {
 				# Color nodes with "infinite" ratios black
 				color[is.na(attr) & attrs$count > 0] <- "black"

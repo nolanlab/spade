@@ -49,6 +49,7 @@ Boolean specifying whether to omit titles and gradient legend.
   \item{palette}{
 A string (either "jet" or "bluered"), specifying color palette for nodes. "bluered" tends to show up better on LCD projectors.
 }
+}
 \details{
 }
 \references{
