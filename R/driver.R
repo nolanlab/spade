@@ -450,8 +450,8 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 	    
 			# Plot the tree, with legend showing the gradient
 			pdf(paste(out_dir,basename(f),".",name,".pdf",sep=""))
-	    
-			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1) 
+	    	graph_aspect <- ((max(graph_l[,2])-min(graph_l[,2]))/(max(graph_l[,1])-min(graph_l[,1])))
+			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1, asp=graph_aspect) 
 
 			if (!bare) {			
 				# Substitute pretty attribute names
