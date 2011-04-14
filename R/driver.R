@@ -107,7 +107,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	attr_values <- list()
 
 	if (is.null(panels)) {  # Initialize panels if NULL
-		panels <- list( list(panel_files=sampled_files, median_cols=NULL) )
+		panels <- list( list(panel_files=basename(files), median_cols=NULL) )
 	}
 	
 	for (p in panels) {
