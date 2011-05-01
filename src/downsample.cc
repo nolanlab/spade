@@ -13,7 +13,6 @@
 
 
 #include "util.h"
-#include "prng.h"
 
 namespace {
 
@@ -29,44 +28,41 @@ namespace {
 	return d_l;
     }
 
-    Dist_t 
-    compute_median_min_dist(Data_t *data, size_t dim, size_t obs, size_t num_samples) {			
-	PRNG prng(num_samples);
-	
-	Dist_t* min_dists = new Dist_t[num_samples];
+  Dist_t compute_median_min_dist(Data_t *data, size_t dim, size_t obs, size_t num_samples) {					
+		Dist_t* min_dists = new Dist_t[num_samples];
 
-	#ifdef _OPENMP
-	#pragma omp parallel for shared(min_dists)
-	#endif
-	for (size_t i=0; i<num_samples; i++) {
-	    uint32_t idx;
-	    
-	    // Potential for race condition in PRNG state
+		// Create an randomly shuffled array of indices for
+		// randomly selected samples for computing minimum median distance
+		size_t* idxs = new size_t[obs];
+		for (size_t i=0; i<obs; i++)  			
+			idxs[i] = i;
+		std::random_shuffle(idxs, idxs+obs);
+
 		#ifdef _OPENMP
-		#pragma omp critical
+		#pragma omp parallel for shared(min_dists)
 		#endif
-	    {
-		idx = (prng.sample(num_samples+1)-1);
-	    }
-
-	    // Compute distance to all other neighbors (skipping myself)
+		for (size_t i=0; i<num_samples; i++) {  	    
+	   	size_t idx = idxs[i];  // Uniformly sampled cell
+	    
+			// Compute distance to all other neighbors (skipping myself)
 	    Data_t *point = &data[idx*dim];
 	    Dist_t min_l = std::numeric_limits<Dist_t>::max();
 	    for (size_t j=0; j<idx; j++)
-		min_l = std::min(min_l,distance(point, &data[j*dim], dim));
+				min_l = std::min(min_l,distance(point, &data[j*dim], dim));
 	    for (size_t j=idx+1; j<obs; j++)
-		min_l = std::min(min_l,distance(point, &data[j*dim], dim));
+				min_l = std::min(min_l,distance(point, &data[j*dim], dim));
 	    min_dists[i] = min_l;	
-	}
+		}
 
-	// Determine median
-	std::nth_element(min_dists, min_dists+num_samples/2, min_dists+num_samples);
-	Dist_t median_min_dist = min_dists[num_samples/2];
+		// Determine median
+		std::nth_element(min_dists, min_dists+num_samples/2, min_dists+num_samples);
+		Dist_t median_min_dist = min_dists[num_samples/2];
 	
-	delete min_dists;
+		delete idxs;
+		delete min_dists;
 	
-	return median_min_dist;
-    }
+		return median_min_dist;
+  }
 
     void
     count_neighbors(Data_t* data, size_t dim, size_t obs, Dist_t kernel_width, Dist_t apprx_width, Count_t* densities) 
