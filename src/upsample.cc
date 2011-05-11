@@ -11,7 +11,6 @@
 #endif
 
 #include "util.h"
-#include "prng.h"
 
 namespace {
 

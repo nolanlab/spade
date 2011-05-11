@@ -22,7 +22,7 @@
 #define PARALLEL_NAMESPACE std
 #endif
 
-#include "prng.h"
+#include "util.h"
 
 namespace {
 
