@@ -42,26 +42,9 @@ Number of observations used to estimate the minimum median distance
 Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
 The name of the written file is returned
-}
-\references{
-%% ~put references to the literature/web site here ~
 }
 \author{
 Michael Linderman
 }
-%%\note{
-%%  ~~further notes~~
-%%}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-%%\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-%%}
-%%\examples{
-%%}

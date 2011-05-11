@@ -21,6 +21,7 @@ Directory where output files are written. Will be created if it does not exist.
 }
 	\item{cluster_cols}{
 Usually a vector of strings specifying the columns to be used in the clustering, e.g., c("(Cd110)D","(Cs111)D"). Strings will be matched against the parameter names extracted from the FCS file. The default=NULL will use all parameters.
+
 }
   \item{panels}{
 List of panels for median and fold change calculations. See details for specific structure. If NULL, medians are computed for all markers in all files.
@@ -58,15 +59,8 @@ A two element vector specifying lower and upper percentiles that should be used 
 	\code{median_cols} and \code{fold_cols} are only interpreted in the context on their panel files, and so partially overlapping panels are possible. However, all the files specified within a panel must have the cluster, median and fold change parameters specified.
 }
 \value{
-}
-\references{
+NULL
 }
 \author{
 Michael Linderman
-}
-\note{
-}
-\seealso{
-}
-\examples{
 }

@@ -26,15 +26,9 @@ Add specific arbitrary attributes to a graph.
 \value{
 A new graph object with the attributes added.
 }
-\references{
-}
 \author{
 Michael Linderman
 }
-\note{
-}
 \seealso{
 \code{\link{set.graph.attribute}}, \code{\link{set.vertex.attribute}}, \code{\link{set.edge.attribute}}
-}
-\examples{
 }

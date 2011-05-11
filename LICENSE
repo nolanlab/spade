@@ -24,8 +24,3 @@ Specifically:
 by Greg Snow <greg.snow at imail.org>, and licensed under the Artistic-2.0 license.
 The Artistic-2.0 license is available in the share/licenses directory of the R
 source or home directory.
-
-2) For convenience, we distribute libpthread.a and phtreadGC2.dll, made available
-by Ross Johnson at http://sourceware.org/pthreads-win32. under the GNU Lesser 
-General Public License (also availble in the R share/licenses directory).
-

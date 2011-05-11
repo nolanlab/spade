@@ -33,13 +33,8 @@ Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 
 }
-\details{
-}
 \value{
 The name of the written file is returned.
-}
-\references{
-%% ~put references to the literature/web site here ~
 }
 \author{
 Michael Linderman
@@ -50,6 +45,4 @@ Underlying implementations have been parallelized with OpenMP. Set
 }
 \seealso{
 \code{\link{SPADE.FCSToTree}}
-}
-\examples{
 }

@@ -46,14 +46,8 @@ Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
 None.
-}
-\references{
-%% ~put references to the literature/web site here ~
 }
 \author{
 Michael Linderman
@@ -65,6 +59,4 @@ Implementation can be very memory intensive.
 }
 \seealso{
 \code{\link{SPADE.downsampleFCS}}
-}
-\examples{
 }

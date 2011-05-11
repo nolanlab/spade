@@ -24,22 +24,12 @@ These functions calculate the coordinates of the vertices for a graph.
 \code{layout.arch_layout} similarly lays out the backbone on an arch, but lays out the side chains using a modified Fruchterman and Reingold force directed algorith.
 }
 \value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-}
-\references{
 All these functions return a numeric matrix with at least two columns, x and y positions, and the same number of lines as the number of vertices.
 }
 \author{
 Michael Linderman
-}
-\note{
+Peng Qiu
 }
 \seealso{
 \code{\link{SPADE.annotateGraph}}
-}
-\examples{
 }

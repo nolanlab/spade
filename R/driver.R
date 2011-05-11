@@ -62,7 +62,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	density_files <- c()
 	sampled_files <- c()
 	for (f in files) {
-		cat("Downsampling file:",f,"\n")
+		message("Downsampling file: ",f)
 		f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
 		f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 
@@ -76,7 +76,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		sampled_files <- c(sampled_files, f_sampled)	
 	}
 
-	cat("Clustering files...\n")
+	message("Clustering files...")
 	cells_file <- paste(out_dir,"clusters.fcs",sep="")
 	clust_file <- paste(out_dir,"clusters.table",sep="")
 	graph_file <- paste(out_dir,"mst.gml",sep="")
@@ -89,7 +89,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 	sampled_files <- c()
 	for (f in density_files) {
-		cat("Upsampling file:",f,"\n")
+		message("Upsampling file: ",f)
 		f_sampled <- paste(f,".cluster.fcs",sep="")
 		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor,comp=comp)
 		sampled_files <- c(sampled_files, f_sampled)
@@ -124,12 +124,12 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 			f <- sampled_files[match(f, basename(files))[1]]
 
 			# Compute the median marker intensities in each node, including the overall cell frequency per node	
-			cat("Computing medians for file:",f,"\n")
+			message("Computing medians for file: ",f)
 			anno <- SPADE.markerMedians(f, vcount(graph), cols=p$median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 					
 			if (!is.null(reference_medians)) {	# If a reference file is specified								
 				# Compute the fold change compared to reference medians
-				cat("Computing fold change for file:",f,"\n")
+				message("Computing fold change for file: ",f)
 				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
 				fold <- fold_anno$medians - reference_medians$medians
 				
@@ -484,24 +484,4 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 		}
     }
 }
-
-SPADE.workflow.concat.FCS <- function(files, file_pattern="*.density.fcs.cluster.fcs", out_dir=".", cols=NULL, layout=SPADE.layout.arch, arcsinh_cofactor=5.0, in_graph_file="mst.gml", out_graph_file="concat.gml", cluster_cols=NULL, comp=TRUE)  {
-	stop("Temporarily out of service. A candidate for deprecation.")
-	if (length(files) == 1 && file.info(files)$isdir) {
-		in_graph_file <- paste(SPADE.strip.sep(files),in_graph_file,sep=.Platform$file)
-		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
-    }
-	out_dir <- SPADE.normalize.out_dir(out_dir)
-
-	anno  <- SPADE.markerMedians(files,cols=cols,arcsinh_cofactor=arcsinh_cofactor,cluster_cols=cluster_cols, comp=comp)
-	graph <- read.graph(in_graph_file, format="gml")
-
-	# Compute the overall cell frequency per node
-	anno[["percent"]] <- anno$count / sum(anno$count) * 100; colnames(anno[["percent"]]) <- c("total");
-
-	out_graph_file <- paste(out_dir,out_graph_file,sep="")
-
-	SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout, anno=anno), out_graph_file, format="gml")
-}
-
 

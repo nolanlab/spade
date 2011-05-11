@@ -43,15 +43,9 @@ List with:
 \item{percenttotal}{Matrix of percent of total number of cells [0-100] in each cluster}
 \item{medians}{Matrix of medians for specified columns}
 }
-\references{
-}
 \author{
 Michael Linderman
 }
-\note{
-}
 \seealso{
 \code{\link{SPADE.addClusterToFCS}}, \code{\link{SPADE.annotateGraph}}
-}
-\examples{
 }

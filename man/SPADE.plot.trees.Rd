@@ -50,16 +50,6 @@ Boolean specifying whether to omit titles and gradient legend.
 A string (either "jet" or "bluered"), specifying color palette for nodes. "bluered" tends to show up better on LCD projectors.
 }
 }
-\details{
-}
-\references{
-}
 \author{
 Michael Linderman
-}
-\note{
-}
-\seealso{
-}
-\examples{
 }

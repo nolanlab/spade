@@ -28,16 +28,9 @@ The vertex and edge attributes are written to the file if they are numeric or st
 \value{
 A NULL, invisibly
 }
-\references{
-}
 \author{
 Michael Linderman
-}
-\note{
 }
 \seealso{
 \code{\link{write.graph}}
 }
-\examples{
-}
-
