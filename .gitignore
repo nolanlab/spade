@@ -6,3 +6,4 @@ src/Makevars
 *.o
 *.so
 a.out.dSYM/
+inst/doc/SPADE.pdf
