@@ -51,7 +51,7 @@ PKG_LIBS=-mthreads -lgomp -lpthread
 \end{verbatim}
 and ensure that the necessary pthreads compatibility libraries are installed. These libraries can be downloaded for 32-bit Windows installations at \url{http://sourceware.org/pthreads-win32}. 
 
-\textbf{SPADE} can be used as a stand-alone package, or with an accompanying Cytoscape plugin termed "CytoSPADE". Cytoscape is a free and open-source network visualization tool that can be downloaded at \url{http://cytoscape.org}. After installing Cytoscape, the CytoSPADE plugin can be installed by copying \texttt{path/to/installed/SPADE/package/tools/CytoSPADE.jar} to the Cytoscape plugins directory. Once installed, CytoSPADE can be invoked from Cytoscape's Plugins menu. Follow the on-screen directions to use CytoSPADE for running new analyses or viewing the results of previous analyses. Note that to use the \textbf{SPADE} R package from within Cytoscape \texttt{Rscript} must be in your path.
+\textbf{SPADE} can be used as a stand-alone package, or with an accompanying Cytoscape plugin termed ``CytoSPADE". Cytoscape is a free and open-source network visualization tool that can be downloaded at \url{http://cytoscape.org}. After installing Cytoscape, the CytoSPADE plugin can be installed by copying \texttt{path/to/installed/SPADE/package/tools/CytoSPADE.jar} to the Cytoscape plugins directory. Once installed, CytoSPADE can be invoked from Cytoscape's Plugins menu. Follow the on-screen directions to use CytoSPADE for running new analyses or viewing the results of previous analyses. Note that to use the \textbf{SPADE} R package from within Cytoscape \texttt{Rscript} must be in your path.
 
 \section{Example}
 
@@ -65,7 +65,7 @@ library(spade)
 data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
 @
 
-The example data has two parameters with (in \texttt{arcsinh} space) a very apparent "trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data.
+The example data, shown in Figure~\ref{fig:biaxial}, has two parameters with (in \texttt{arcsinh} space) a very apparent ``trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data.
 
 \begin{figure}
 \centering
@@ -75,7 +75,7 @@ fcs <- read.FCS(data_file_path)
 plot(transform("marker1"=asinh, "marker2"=asinh) %on% fcs)
 @
 \label{fig:biaxial}
-\caption{Biaxial plot of the two markers in the sample FCS file transformed into \texttt{arcsinh} space. Note the varying population densities, and in particular the rare population where both markers are "low".}
+\caption{Biaxial plot of the two markers in the sample FCS file transformed into \texttt{arcsinh} space. Note the varying population densities, and in particular the rare population where both markers are ``low".}
 \end{figure}
 
 The primary entry point to SPADE is the driver function. The driver orchestrates the four steps of the SPADE workflow:
@@ -125,7 +125,7 @@ file.rename(paste(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs
 \includegraphics{\Sexpr{paste(output_dir,"pdf","marker2.pdf",sep=.Platform$file.sep)}}
 \end{figure}
 
-Although not immediately obvious, after looking for a moment we can see the "trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are "high" and the rare populate where both markers are "low".
+Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are "high" and the rare populate where both markers are "low".
 
 This example workflow gives a brief introduction to using \textbf{SPADE}. There are many additional features not described here. The interested user is pointed to the Rdocs for the driver and other \texttt{SPADE} functions. Additionally many users will interact exclusively with \textbf{SPADE} via the Cytoscape plugin. Section~\ref{sec:install} describes how to install the Cytoscape plugin. 
 
