@@ -443,17 +443,20 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 		
 			color <- colorscale[findInterval(attr, grad,all.inside=TRUE)]
 			color[is.na(attr) | (attrs$count == 0)] <- "grey"
-			if (grepl("^logratio", name)) {
-				# Color nodes with "infinite" ratios black
-				color[is.na(attr) & attrs$count > 0] <- "black"
+			if (grepl("^percenttotalratiolog$",name)) {
+				# Color nodes with "infinite" ratios with top of color scale
+				color[is.na(attr) & attrs$count > 0] <- tail(colorscale,1)
 			}
-				
-			V(graph)$color <- color
-	    
+			
+			# Use "empty" circles for nodes with no cells, or otherwise "invalid" information
+			fill_color  <- color
+			is.na(fill_color) <- is.na(attr)
+			frame_color <- color
+
 			# Plot the tree, with legend showing the gradient
 			pdf(paste(out_dir,basename(f),".",name,".pdf",sep=""))
-	    	graph_aspect <- ((max(graph_l[,2])-min(graph_l[,2]))/(max(graph_l[,1])-min(graph_l[,1])))
-			plot(graph, layout=graph_l, vertex.shape="circle", edge.color=edge.color, vertex.size=vsize, vertex.frame.color=NA, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1, asp=graph_aspect) 
+	    graph_aspect <- ((max(graph_l[,2])-min(graph_l[,2]))/(max(graph_l[,1])-min(graph_l[,1])))
+			plot(graph, layout=graph_l, vertex.shape="circle", vertex.color=fill_color, vertex.frame.color=frame_color, edge.color=edge.color, vertex.size=vsize, vertex.label=NA, edge.arrow.size=.25, edge.arrow.width=1, asp=graph_aspect) 
 
 			if (!bare) {			
 				# Substitute pretty attribute names
