@@ -7,7 +7,7 @@ Plot trees with annotated vertices
 Plot trees for each vertex annotation setting vertex size and color based on the particular annotation.
 }
 \usage{
-SPADE.plot.trees(graph, files, file_pattern = "*anno.Rsave", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|medians|fold", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered")
+SPADE.plot.trees(graph, files, file_pattern = "*anno.Rsave", out_dir = ".", layout = SPADE.layout.arch, attr_pattern = "percent|medians|fold|cvs", scale = NULL, pctile_color=c(0.02,0.98), normalize="global", size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered")
 }
 \arguments{
   \item{graph}{
@@ -26,7 +26,7 @@ Directory where output files are written. Will be created if it does not exist.
 Either a function or a numeric matrix specifying how vertices are placed on plot. If it is a matrix, the matrix must have two columns, x and y position, and as many rows as vertices. If \code{layout} is a function, it will be called with an igraph graph as the single parameter.
 }
   \item{attr_pattern}{
-A regular expression that matches the attributes that should be plotted for each graph.  Parameter names matching regex "median|fraction" will be plotted with a scale range set to [min, max] for that attribute, while all other parameters will be plotted on a centered scale with the range [abs(min(parameter values),max(parameter values)), abs(min(parameter values),max(parameter values))]
+A regular expression that matches the attributes that should be plotted for each graph.  Parameter names matching regex "median|fraction|cvs" will be plotted with a scale range set to [min, max] for that attribute, while all other parameters will be plotted on a centered scale with the range [abs(min(parameter values),max(parameter values)), abs(min(parameter values),max(parameter values))]
 }
   \item{scale}{
 A two element vector, e.g. c(-1,1), specifying low and upper bound for color scale. Values below and above these bounds will be forced to the 'smallest' and 'largest' color respectively. If specified, overrides 'pctile_color'.

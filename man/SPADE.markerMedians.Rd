@@ -2,10 +2,10 @@
 \alias{SPADE.markerMedians}
 \alias{SPADE.annotateMarkers}
 \title{
-Compute marker medians and counts for clusters
+Compute marker medians, coefficient of variations and counts for clusters
 }
 \description{
-Compute the marker medians and observations counts for cluster annoated FCS files.
+Compute the marker medians, coefficients of variation and observations counts for cluster annoated FCS files.
 }
 \usage{
 SPADE.markerMedians(files, num.clusters, cols = NULL, arcsinh_cofactor = 5, cluster_cols=NULL, comp=TRUE)
@@ -42,6 +42,7 @@ List with:
 \item{count}{Matrix of observation count for clusters}
 \item{percenttotal}{Matrix of percent of total number of cells [0-100] in each cluster}
 \item{medians}{Matrix of medians for specified columns}
+\item{cvs}{Matrix of coefficient of variation (CV), 100*sd(data)/abs(mean(data)), for specified columns}
 }
 \author{
 Michael Linderman

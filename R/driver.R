@@ -357,7 +357,7 @@ subplot <- function(fun, x, y=NULL, size=c(1,1), vadj=0.5, hadj=0.5,
 }
 
 
-SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|medians|fold", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered") {
+SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir=".", layout=SPADE.layout.arch, attr_pattern="percent|medians|fold|cvs", scale=NULL, pctile_color=c(0.02,0.98), normalize="global",size_scale_factor=1, edge.color="grey", bare=FALSE, palette="bluered") {
 	if (!is.igraph(graph)) {
 		stop("Not a graph object")
     }	
@@ -430,7 +430,7 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 			} else # Scale to local min/max
 				boundary <- quantile(attr, probs=pctile_color, na.rm=TRUE)  # Trim outliers for this attribtue
 				
-			if (length(grep("^medians|percent", name)))
+			if (length(grep("^medians|percent|cvs", name)))
 				boundary <- c(min(boundary), max(boundary))  # Dont make range symmetric for median or percent values
 			else
 				boundary <- c(-max(abs(boundary)), max(abs(boundary)))  # Make range symmetric for fold-change and ratio values
@@ -468,7 +468,9 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
 					name <- sub("percent", "Percent freq. of ", name)
 				else if (grepl("^percenttotalratiolog$", name))
 					name <- "Log10 of Ratio of Percent Total of Cells in Each Cluster"
-	
+				else if (grepl("^cvs", name))
+					name <- sub("cvs", "Coeff. of Variation of ", name)
+
 				# Make parameters used for clustering obvious
 				if (grepl("_clust$", name))
 					name <- sub("_clust", "\n(Used for tree-building)", name)

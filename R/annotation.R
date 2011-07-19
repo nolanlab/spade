@@ -46,16 +46,19 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 		stop("More clusters in FCS files than indicated")
 	}
 
-	count <- matrix(0,  nrow=num.clusters, ncol=1, dimnames=list(ids, "count"))
+	count   <- matrix(0,  nrow=num.clusters, ncol=1, dimnames=list(ids, "count"))
 	medians <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
+	cvs     <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
 	for (i in ids) {
 		data_s  <- asinh(subset(data, clst == i) / arcsinh_cofactor)
+		
 		count[i,1]  <- nrow(data_s)
 		medians[i,] <- apply(data_s, 2, median)
+		cvs[i,]     <- apply(data_s, 2, function(d) { 100*sd(d)/abs(mean(d)) })
 	} 
 	percenttotal <- matrix((count / sum(count)) * 100.0, nrow=num.clusters, ncol=1, dimnames=list(ids, "percenttotal"))
 
-    list(count=count, medians=medians, percenttotal=percenttotal)
+  list(count=count, medians=medians, cvs=cvs, percenttotal=percenttotal)
 }
 
 SPADE.layout.arch <-  function(mst_graph) {
