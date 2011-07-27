@@ -7,3 +7,9 @@ src/Makevars
 *.so
 a.out.dSYM/
 inst/doc/SPADE.pdf
+inst/doc/.build.timestamp
+inst/doc/Rplots.pdf
+inst/doc/SPADE-plotSampleData.eps
+inst/doc/SPADE-plotSampleData.pdf
+inst/doc/SPADE.tex
+
