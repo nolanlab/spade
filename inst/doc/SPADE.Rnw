@@ -61,7 +61,7 @@ To demonstrate the functionality of \textbf{SPADE}, we use \texttt{SimulatedRawD
 library(spade)
 @
 
-<<sampleData, echo=FALSE>>=
+<<sampleData >>=
 data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
 @
 
