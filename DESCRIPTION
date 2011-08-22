@@ -4,6 +4,7 @@ Version: 0.3.1
 Author: M. Linderman, P. Qiu, E. Simonds, Z. Bjornsen
 Description: Provides tools for constructing minimum spanning trees of flow cytometry data
 Maintainer: M. Linderman <mlinderm@stanford.edu>
-Imports: flowCore, igraph
-Depends: R (>= 2.11), flowCore, igraph
+Imports: Biobase, flowCore, igraph
+Depends: R (>= 2.11)
 License: GPL-2
+biocViews: FlowCytometry, GraphsAndNetworks, GUI, Visualization, Clustering

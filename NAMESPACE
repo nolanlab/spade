@@ -1,4 +1,7 @@
 useDynLib(spade)
+importFrom(Biobase, exprs, "exprs<-", description, "description<-", pData, "pData<-")
+import(flowCore, igraph)
+export(read.graph, layout.kamada.kawai)
 export(
 	"SPADE.addDensityToFCS",
 	"SPADE.downsampleFCS",

@@ -42,7 +42,7 @@ This package provides a performant implementation of SPADE, and an accompanying 
 \section{Installation}
 \label{sec:install}
 
-\textbf{SPADE} is distributed as both source and binary packages that can be installed via the R command line, or within R using \texttt{install.packages}. The source package should build on any platform with a modern C++ compiler (and on Windows with \texttt{Rtools}). On Linux/Unit/OSX platforms with a C++ compiler that supports OpenMP, \textbf{SPADE} will be built with support for multicore and shared memory multi-processor systems. By default, OpenMP is disabled when building on Windows platforms due to difficulties with the pthreads compatibility DLLs. 
+\textbf{SPADE} is distributed as both source and binary packages that can be installed via the R command line, or within R using \texttt{install.packages}. The source package should build on any platform with a modern C++ compiler (and on Windows with \texttt{Rtools}). On Linux/Unix/OSX platforms with a C++ compiler that supports OpenMP, \textbf{SPADE} will be built with support for multicore and shared memory multi-processor systems. By default, OpenMP is disabled when building on Windows platforms due to difficulties with the pthreads compatibility DLLs. 
 
 Those users wishing to enable OpenMP support on Windows will need to modify \texttt{src/Makevars.win} to include the following compiler flags:
 \begin{verbatim}
@@ -103,7 +103,7 @@ dir(output_dir)
 It is often helpful to visualize the results directly. \textbf{SPADE} includes functions for plotting all possible trees as PDFs.
 
 <<plotTrees >>=
-mst_graph <- read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
 layout    <- read.table(paste(output_dir,"layout.table",sep=.Platform$file.sep))
 SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=as.matrix(layout))
 @
