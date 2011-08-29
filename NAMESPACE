@@ -15,5 +15,6 @@ export(
 	"SPADE.annotateGraph",
 	"SPADE.driver",
 	"SPADE.plot.trees",
-	"SPADE.flattenAnnotations"
+	"SPADE.flattenAnnotations",
+	"SPADE.installPlugin"
 )
