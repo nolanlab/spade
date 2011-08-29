@@ -21,19 +21,21 @@ You will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) 
 
     c:\Rtools\bin;c:\Rtools\perl\bin;c:\Rtools\MinGW\bin;c:\Program Files\R\<your R version>\bin;
 
+
 ## Building Packages
 Source packages can be built with
 
-		R CMD build <SPADE PATH>
+    $ R CMD build <SPADE PATH>
 
 and binary packages with
 
-		R CMD build --binary <SPADE PATH>
+    $ R CMD build --binary <SPADE PATH>
 
 ## Tips and Resources
 * [R manual for writing extensions](http://cran.r-project.org/doc/manuals/R-exts.html)
 
 ## Citations
 SPADE was developed in the Plevritis and Nolan Labs at Stanford University, and is described in the following publications:
+
 * Peng Qiu, Erin F. Simonds, Sean C. Bendall, Kenneth D. Gibbs, Robert V. Bruggner, Michael D. Linderman, Karen Sachs, Garry P. Nolan, Sylvia K. Plevritis, "Phenotypically determined self-organization of flow cytometry data with spanning-tree progression analysis of density normalized events. *Under review*, 2011.
 * Michael D. Linderman, Erin F. Simonds, Peng Qiu, Zach Bjornson, Nikesh Kotecha, Teresa H. Meng, Sylvia Plrevritis, Garry P. Nolan, "Algorithmically recoving the hematopoietic lineage from high-dimensional cytometry data using SPADE", *Congress of the Intl. Society for Advancement of Cytometry*, 2010.
