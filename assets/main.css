@@ -8,6 +8,10 @@ p, li, h1, h2, h3, h4, h5, h6, pre {
 	margin: 0 auto;
 }
 
+.header {
+	position: relative;
+}
+
 .caption {
 	font-size: 10px;
 	text-align: justify;
@@ -39,7 +43,9 @@ p, li, h1, h2, h3, h4, h5, h6, pre {
 }
 
 #navigation {
-	float: right;
+	position: absolute;	
+	top: 0;
+	right: 0;
 	list-style: none;
 	text-align: right;
 	font-size: 20px;
