@@ -13,3 +13,5 @@ inst/doc/SPADE-plotSampleData.eps
 inst/doc/SPADE-plotSampleData.pdf
 inst/doc/SPADE.tex
 
+_site
+.rvmrc

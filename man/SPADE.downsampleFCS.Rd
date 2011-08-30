@@ -34,20 +34,31 @@ be set internally to downsample to approximately the desired number of
 samples.
 }
 }
-%%\details{
-%%  ~~ If necessary, more details than the description above ~~
-%%}
 \value{
 The name of the written file is returned
 }
-%%\references{
-%% ~put references to the literature/web site here ~
-%%}
 \author{
 Michael Linderman
 }
 \seealso{
 \code{\link{SPADE.addDensityToFCS}}
 }
-%%\examples{
-%%}
+\note{
+Underlying implementations have been parallelized with OpenMP. Set
+\code{OMP_NUM_THREADS} in environment to control the number of threads used.
+}
+
+\examples{
+	# Load two-parameters sample data included in package
+	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+
+	output_dir <- tempdir()
+	
+	# Compute and annotate FCS file with density
+	density_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
+	SPADE.addDensityToFCS(data_file_path, density_file_path, cols=c("marker1","marker2"))
+
+	# Downsample FCS file based on density
+	downsample_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
+	SPADE.downsampleFCS(density_file_path, downsample_file_path)
+}

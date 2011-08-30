@@ -96,8 +96,8 @@ SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marke
 
 \textbf{SPADE} produces a number of files in the \texttt{output} directory including annotated tree structures for each FCS file. These trees are saved as GML files that can be opened by a number of graph visualization packages, including Cytoscape.
 
-<<seeOutput >>=
-dir(output_dir)
+<<seeOutput echo=FALSE>>=
+grep("^libloc",dir(output_dir),invert=TRUE,value=TRUE)
 @
 
 It is often helpful to visualize the results directly. \textbf{SPADE} includes functions for plotting all possible trees as PDFs.

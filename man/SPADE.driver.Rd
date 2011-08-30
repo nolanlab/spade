@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
 }
 \arguments{
   \item{files}{
@@ -63,4 +63,13 @@ NULL
 }
 \author{
 Michael Linderman
+}
+\examples{
+	# Load two-parameters sample data included in package
+	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+
+	# Run basic SPADE analyses, clustering on two parameters. Annotated graphs will be
+	# in output_dir. See SPADE.plot.trees to generate PDFs of annotated graphs.
+	output_dir <- tempdir()
+	SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
 }
