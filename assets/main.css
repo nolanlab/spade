@@ -1,0 +1,46 @@
+p, li, h1, h2, h3, h4, h5, h6, pre {
+	font-family: helvetica, arial, sans-serif;
+	color: #686868;
+}
+
+.wrapper {
+	width: 950px;
+	margin: 0 auto;
+}
+
+.caption {
+	font-size: 10px;
+	text-align: justify;
+}
+
+.left {
+	width: 470px;
+	margin-right: 10px;
+	float: left;
+}
+.right {
+	width: 470px;
+	margin-right: 0;
+	float: right;
+}
+.clearfix {
+	clear: both;
+}
+
+
+#logo {
+	height: 180px;
+}
+
+#title {
+	margin-left: 20px;
+	text-align: left;
+	display: inline-block;
+}
+
+#navigation {
+	float: right;
+	list-style: none;
+	text-align: right;
+	font-size: 20px;
+}
