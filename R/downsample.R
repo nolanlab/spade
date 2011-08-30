@@ -23,7 +23,8 @@ SPADE.addDensityToFCS <- function(infilename, outfilename,
     # Compute the density
     density <- SPADE.density(	asinh(in_data[,idxs]/arcsinh_cofactor),
 				kernel_mult=kernel_mult,apprx_mult=apprx_mult,med_samples=med_samples);
-
+		if (max(density) == 0.0)
+			warning(paste(infilename,"has degenerate densities, possibly due to many identical observations",sep=" "))
 
     # Reload FCS file without transformation, so it can be accurately rewritten...
     in_fcs <- SPADE.read.FCS(infilename,comp=FALSE,transform=FALSE)

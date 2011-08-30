@@ -34,45 +34,47 @@ SPADE.writeGraph <- function(graph, outfilename) {
 }
 
 SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfilename, 
-    cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000,comp=TRUE) {
+	cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000,comp=TRUE) {
     
-    data = c()
-    for (f in infilenames) {
+	data = c()
+	for (f in infilenames) {
 		# Load in FCS file
 		in_fcs  <- SPADE.read.FCS(f,comp=comp);
 		in_data <- exprs(in_fcs);
-
+	
 		params <- parameters(in_fcs);
 		pd     <- pData(params);
-
+	
 		# Select out the desired columns
 		if (is.null(cols)) { 
 			cols <- as.vector(pd$name) 
 		}
 		idxs <- match(cols,pd$name)
-		if (any(is.na(idxs))) { 
-			stop("Invalid column specifier") 
-		}
+			if (any(is.na(idxs))) { 
+				stop("Invalid column specifier") 
+			}
 	
 		data <- rbind(data,in_data[,idxs,drop=FALSE])
-		colnames(data) <- pd$name[idxs]
-    }
-
-    # Downsample data if neccessary 
-    if (nrow(data) > desired_samples) {
+			colnames(data) <- pd$name[idxs]
+	}
+	
+	# Downsample data if neccessary 
+	if (nrow(data) > desired_samples) {
 		data <- data[sample(1:nrow(data),desired_samples),]
-    }
-
-    # Compute the cluster centers, marking any single observation clusters as NA
-    clust <- SPADE.cluster(asinh(data/arcsinh_cofactor),k);
-    
-    # Write out FCS file downsampled data used in clustering, along with assignment
-    # Strip out observations in single observation clusters
-    ff <- SPADE.build.flowFrame(subset(cbind(data, cluster=clust$assign),!is.na(clust$assign)))
-    write.FCS(ff, outfilename) 
-
-    # Write out the MST and cluster centers to specified files ignoring single observation clusters
-    SPADE.writeGraph(SPADE.clustersToMST(clust$centers),graphfilename);
-    write.table(clust$centers,file=clusterfilename,row.names=FALSE,col.names=colnames(data))
+	} else if (nrow(data) == 0) {
+		stop("Number of observations to cluster is zero. Did the density/downsampling warn about data similarity?")
+	}
+	
+	# Compute the cluster centers, marking any single observation clusters as NA
+	clust <- SPADE.cluster(asinh(data/arcsinh_cofactor),k);
+	
+	# Write out FCS file downsampled data used in clustering, along with assignment
+	# Strip out observations in single observation clusters
+	ff <- SPADE.build.flowFrame(subset(cbind(data, cluster=clust$assign),!is.na(clust$assign)))
+	write.FCS(ff, outfilename) 
+	
+	# Write out the MST and cluster centers to specified files ignoring single observation clusters
+	SPADE.writeGraph(SPADE.clustersToMST(clust$centers),graphfilename);
+	write.table(clust$centers,file=clusterfilename,row.names=FALSE,col.names=colnames(data))
 }
  
