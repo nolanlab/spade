@@ -1,0 +1,7 @@
+a.out.dSYM
+config.status
+inst/
+src/
+.rvmrc
+config.log
+_site
