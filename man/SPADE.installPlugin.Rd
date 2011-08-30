@@ -20,12 +20,8 @@ Copies the Cytoscape plugin file distributed with the SPADE R package to the Cyt
 \value{
 Logical indicating success of the copy operation.
 }
-\references{
-}
 \author{
-Michael D. Linderman
-}
-\note{
+Michael Linderman
 }
 \examples{
 # On OSX:

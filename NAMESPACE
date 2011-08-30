@@ -1,7 +1,6 @@
 useDynLib(spade)
 importFrom(Biobase, exprs, "exprs<-", description, "description<-", pData, "pData<-")
-import(flowCore, igraph)
-export(read.graph, layout.kamada.kawai)
+import(flowCore)
 export(
 	"SPADE.addDensityToFCS",
 	"SPADE.downsampleFCS",
@@ -11,7 +10,6 @@ export(
 	"SPADE.markerMedians",
 	"SPADE.layout.arch",
 	"SPADE.write.graph",
-	"SPADE.layout.arch_layout",
 	"SPADE.annotateGraph",
 	"SPADE.driver",
 	"SPADE.plot.trees",
