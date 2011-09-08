@@ -1,4 +1,4 @@
-p, li, h1, h2, h3, h4, h5, h6, pre {
+p, li, h1, h2, h3, h4, h5, h6, pre, div {
 	font-family: helvetica, arial, sans-serif;
 	color: #686868;
 }
@@ -31,6 +31,19 @@ p, li, h1, h2, h3, h4, h5, h6, pre {
 	clear: both;
 }
 
+.rounded {
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+  -khtml-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.notice {
+	margin: 20px 50px;
+	padding: 20px;
+	border: 1px solid #FF9900;
+	background: #FFF3E5;
+}
 
 #logo {
 	height: 180px;
