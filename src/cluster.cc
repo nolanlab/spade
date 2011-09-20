@@ -1,6 +1,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
+#include <R_ext/Print.h>
 #include <cmath>
 #include <stdint.h>
 #include <limits>
@@ -204,9 +205,11 @@ namespace {
 		ACluster *c_beg = c_ap.get(), *c_end = c_beg + obs;
 		for (size_t i=0; i<obs; i++)  // Initialize clusters for row major data
 			c_beg[i].init_RM(&data[i*dim]);
-	
+
+		double max_rounds = log2((double)(obs)-1);
 		for (size_t round = 0; ; round++) {
-						
+			Rprintf("  Estimated clustering progress: %2.0f%% ...\n",std::min(99.0,((double)round)/max_rounds * 100.0));
+
 			// Only looking at "valid" clusters
 			c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
 						
@@ -274,6 +277,8 @@ namespace {
 				assgn[(*b - data) / dim] = cur_Id;
 			i->destroy();
 		}	    
+	
+		Rprintf("  Estimated clustering progress: %3.0f%%\n",100.0);	
 	}
 		
 
