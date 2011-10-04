@@ -10,10 +10,10 @@
 
 (
 IFS=$'\n'
-filenames=(`ls -1|grep .*median.*\.pdf$`)
+filenames=(`ls -1|grep .*fold.*\.pdf$`)
 
 echo "=== Unique parameters: ==="
-uniqueparams=(`printf "%s\n" "${filenames[@]}" | sed 's/.*\.anno\.Rsave\.medians//g' | sed 's/\.pdf//g' |sort -u`)
+uniqueparams=(`printf "%s\n" "${filenames[@]}" | sed 's/.*\.anno\.Rsave\.fold//g' | sed 's/\.pdf//g' |sort -u`)
 printf "%s\n" "${uniqueparams[@]}"
 paramstotal=(`printf "%s\n" "${uniqueparams[@]}"|wc -l`)
 echo "Total unique parameters: $paramstotal"
@@ -25,32 +25,32 @@ fcstotal=(`printf "%s\n" "${uniquefcs[@]}"|wc -l`)
 echo "Total unique FCS files: $fcstotal"
 
 echo "=== Making folder for each parameter: ==="
-mkdir ../pdf_organized_by_parameter
+mkdir ../fold_pdf_organized_by_parameter
 COUNT="0"
 for i in ${uniqueparams[*]}; do
-    mkdir -v ../pdf_organized_by_parameter/$i
+    mkdir -v ../fold_pdf_organized_by_parameter/$i
     let COUNT++
 done
 
 echo "=== Copying each PDF to the appropriate parameter folder ==="
 COUNT="0"
 for i in ${uniqueparams[*]}; do
-    cp -v *$i*\.pdf ../pdf_organized_by_parameter/$i
+    cp -v *$i*\.pdf ../fold_pdf_organized_by_parameter/$i
     let COUNT++
 done
 
 echo "=== Making folder for each FCS file: ==="
-mkdir ../pdf_organized_by_FCS
+mkdir ../fold_pdf_organized_by_FCS
 COUNT="0"
 for i in ${uniquefcs[*]}; do
-    mkdir -v ../pdf_organized_by_FCS/$i
+    mkdir -v ../fold_pdf_organized_by_FCS/$i
     let COUNT++
 done
 
 echo "=== Copying each PDF to the appropriate FCS file folder ==="
 COUNT="0"
 for i in ${uniquefcs[*]}; do
-    cp -v $i*\.pdf ../pdf_organized_by_FCS/$i
+    cp -v $i*\.pdf ../fold_pdf_organized_by_FCS/$i
     let COUNT++
 done
 
