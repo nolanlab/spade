@@ -29,7 +29,7 @@ Source packages can be built with
 
 and binary packages with
 
-    $ R CMD build --binary <SPADE PATH>
+    $ R CMD build --no-vignettes --binary <SPADE PATH>
 
 ## Tips and Resources
 * [R manual for writing extensions](http://cran.r-project.org/doc/manuals/R-exts.html)
