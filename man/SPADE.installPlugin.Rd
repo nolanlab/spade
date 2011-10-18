@@ -25,5 +25,5 @@ Michael Linderman
 }
 \examples{
 # On OSX:
-SPADE.installPlugin("/Applications/Cytoscape_v2.8.1/")
+# SPADE.installPlugin("/Applications/Cytoscape_v2.8.1/")
 }
