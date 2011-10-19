@@ -6,6 +6,6 @@ Description: SPADE, or Spanning tree Progression of Density normalized Events, i
 Maintainer: Michael Linderman <michael.linderman@stanford.edu>
 Imports: Biobase, flowCore
 Suggests: flowViz
-Depends: R (>= 2.11), igraph
+Depends: R (>= 2.11), igraph, Rclusterpp
 License: GPL-2
 biocViews: FlowCytometry, GraphsAndNetworks, GUI, Visualization, Clustering
