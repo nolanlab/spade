@@ -5,8 +5,10 @@ SPADE.cluster <- function(tbl, k) {
     }
 
     # Transpose table before call into row major order
-    clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
-  
+    clust <- .Call("SPADE_cluster",t(tbl),as.integer(1))
+
+
+
 	# Invalid clusters have assgn == 0
 	is.na(clust$assgn) <- which(clust$assgn == 0)
 
@@ -17,6 +19,8 @@ SPADE.cluster <- function(tbl, k) {
 	hclust$order  <- 1:nrow(tbl)
 	hclust$labels <- 1:nrow(tbl)
 	class(hclust) <- "hclust"
+	
+	clust$assgn <- cutree(hclust,k=k);
 
 	centers = c()	
 	for (i in c(1:max(clust$assgn, na.rm=TRUE))) {  
@@ -77,7 +81,13 @@ SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfile
 
     # Compute the cluster centers, marking any single observation clusters as NA
     clust <- SPADE.cluster(asinh(data/arcsinh_cofactor),k);
-    
+
+	# Generate path for merge order
+    mergeOrderPath = paste(dirname(outfilename),"/","merge_order.txt",sep="");
+
+	# Write the DEFAULT merge order
+	write.table(clust$hclust$merge,file=mergeOrderPath,sep="\t",quote=F,row.names=F,col.names=F)
+
     # Write out FCS file downsampled data used in clustering, along with assignment
     # Strip out observations in single observation clusters
     ff <- SPADE.build.flowFrame(subset(cbind(data, cluster=clust$assign),!is.na(clust$assign)))
