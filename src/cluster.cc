@@ -1,7 +1,6 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
-#include <R_ext/Print.h>
 #include <cmath>
 #include <stdint.h>
 #include <limits>
@@ -62,20 +61,35 @@ namespace {
 		void push(ACluster* c, Dist_t d);    
 		void push(PQ& pq);
 
+		const Value_t& furthestValue() const { return Q.top(); }
 		ACluster* furthestCluster() const { return Q.top().first; }
 		void popFurthest() { Q.pop(); }
 	};
 
-    /* Maintain state for a single cluster
-     */
+
+	/* Maintain state for a single cluster
+	*/
 	class ACluster {
 	public:
-		static size_t dim;
-		static void init_global(size_t d) { dim = d; }
-
+		static size_t obs, dim;
+			
+		static int current_merge_id; 	// Tracking for building "hclust" structure
+		static Dist_t* hclust_height;
+		static int*    hclust_merge;
+		
+		static void init_global(size_t o, size_t d, Dist_t* h, int* m) { 
+			obs = o; dim = d; 
+			hclust_height = h; 
+			hclust_merge = m;
+			current_merge_id = 0;
+		}
+	
 	public:
-		Data_t* center;		// My cluster center
-		bool valid, merged;  // Cluster statuses
+		Data_t* center;		      // My cluster center
+		int hclust_merge_id;           // My merge id (for hclust)
+
+		bool valid, merged;     // Cluster statuses
+		
 		const Data_t **members;	// Observations in my cluster
 		size_t num_members;
 
@@ -83,9 +97,12 @@ namespace {
 		// Satisfied with compiler generated constructors
 
 		// Initialization and destruction
-		void init_RM(const Data_t* data) {
+		void init_RM(const Data_t* data, int merge_id) {
 			center = Calloc(dim, Data_t);
 			memcpy(center, data, dim*sizeof(Data_t));
+
+			hclust_merge_id = merge_id;
+			assert(merge_id < 0);
 
 			valid = true; merged = false;
 
@@ -93,6 +110,7 @@ namespace {
 			members[0]  = data;
 			num_members = 1;
 		}
+		
 		void destroy() {
 			center  = (Free(center), (Data_t*)0);
 			members = (Free(members), (const Data_t**)0);
@@ -138,6 +156,7 @@ namespace {
 		}
 
 		void push_on_pq(ACluster* from, PQ& pq) const {
+			Dist_t min_distance = std::numeric_limits<Dist_t>::max();
 			for (member_iterator i=from->member_begin(), e=from->member_end(); i!=e; ++i)
 				pq.push(from, distance(center, *i, dim)); 
 		}
@@ -147,12 +166,34 @@ namespace {
 			// has already been merged in this round
 			pq.normalize();
 
+			// Create forward iterable version of priority queue
+			std::vector<PQ::Value_t> pq_v;
 			while (!pq.empty()) {
-				ACluster& rhs = *pq.furthestCluster();
-				if (!rhs.get_merged())
-					this->merge_in(rhs);
+				assert(!pq.furthestValue().first->get_merged());
+				pq_v.push_back(pq.furthestValue());
 				pq.popFurthest();
 			}
+		
+			// Record the merging structure
+			for (std::vector<PQ::Value_t>::reverse_iterator i=pq_v.rbegin(), e=pq_v.rend(); i!=e; ++i) {
+				ACluster* rhs = i->first;
+				
+				if (rhs->get_merged())  // There can be multiple instances of same cluster on PQ
+					continue;
+				assert(rhs->get_valid());
+				
+				// Record distance in height vector, merges in merge matrix
+				assert(current_merge_id < (obs-1));
+				hclust_height[current_merge_id] = i->second;  
+				
+				hclust_merge[current_merge_id] = this->hclust_merge_id; // Recall merge is (obs-1)x2 in column major 
+				hclust_merge[current_merge_id + (obs-1)] = rhs->hclust_merge_id;  
+				
+				this->hclust_merge_id = ++current_merge_id;  // Recall R expects 1-indexed merge IDs
+				
+				this->merge_in(*rhs);
+			}
+			
 		}
 
 		// Merge in other cluster
@@ -166,13 +207,19 @@ namespace {
 			rhs.destroy();    
 		}
 
-    };
+  };
 
-    size_t ACluster::dim;
+  size_t  ACluster::obs, ACluster::dim;
+	Dist_t* ACluster::hclust_height;
+	int*    ACluster::hclust_merge;
+	int     ACluster::current_merge_id;
+
+	// Priority Queue Implementation
+	// Must be defined after ACluster
 
 	void PQ::normalize() {
 		while (!Q.empty()) {
-			if (Q.top().second >= MMD)
+			if (Q.top().second >= MMD || Q.top().first->get_merged())
 				Q.pop();
 			else
 				break;
@@ -196,20 +243,21 @@ namespace {
 			pq.Q.pop();
 		}
 	}
-	
+
+
+
+		
 	void
-    cluster(const Data_t* data, size_t obs, size_t dim, size_t k, Idx_t* assgn) {
-		ACluster::init_global(dim);
+  cluster(const Data_t* data, size_t obs, size_t dim, size_t k, Idx_t* assgn, Dist_t* height_l, int* merge_l) {
+		ACluster::init_global(obs, dim, height_l, merge_l);
 
 		R::auto_ptr<ACluster> c_ap(Calloc(obs, ACluster));
 		ACluster *c_beg = c_ap.get(), *c_end = c_beg + obs;
 		for (size_t i=0; i<obs; i++)  // Initialize clusters for row major data
-			c_beg[i].init_RM(&data[i*dim]);
-
-		double max_rounds = log2((double)(obs)-1);
+			c_beg[i].init_RM(&data[i*dim], -(int)(i+1));
+	
 		for (size_t round = 0; ; round++) {
-			Rprintf("  Estimated clustering progress: %2.0f%% ...\n",std::min(99.0,((double)round)/max_rounds * 100.0));
-
+						
 			// Only looking at "valid" clusters
 			c_end = std::partition(c_beg, c_end, std::mem_fun_ref(&ACluster::get_valid));
 						
@@ -223,7 +271,7 @@ namespace {
 
 			// Stopping condition
 			size_t num_valid = c_end - c_beg;
-			if (num_valid < (size_t)(1.5 * k))
+			if (num_valid <= (size_t)(1.5 * k))
 				break;
 
 			if (round) {  // Clusters already initialized in "0" round
@@ -277,8 +325,6 @@ namespace {
 				assgn[(*b - data) / dim] = cur_Id;
 			i->destroy();
 		}	    
-	
-		Rprintf("  Estimated clustering progress: %3.0f%%\n",100.0);	
 	}
 		
 
@@ -295,27 +341,42 @@ extern "C" {
 			   dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
 		size_t k_l = static_cast<size_t>(asInteger(k));
 
-		SEXP ans, names, assgn; int n_protected = 0;
+		SEXP ans, names, assgn, height, merge; int n_protected = 0;
 
 		// Cluster and assign observations to clusters	
 		PROTECT(assgn = allocVector(INTSXP, obs)); n_protected++;
 		Idx_t* assgn_l = static_cast<Idx_t*>(INTEGER(assgn));
 		std::fill(assgn_l, assgn_l+obs, 0);
-		cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, k_l, assgn_l);
+		
+		PROTECT(height = allocVector(REALSXP, obs-1)); n_protected++;
+		Dist_t* height_l = static_cast<Dist_t*>(REAL(height));
+		std::fill(height_l, height_l+obs-1, 0.);
+
+		PROTECT(merge = allocMatrix(INTSXP, obs-1, 2)); n_protected++;
+		int* merge_l = static_cast<int*>(INTEGER(merge));
+		std::fill(merge_l, merge_l+((obs-1)*2), 0);
+		
+		cluster(static_cast<Data_t*>(REAL(tbl)), obs, dim, k_l, assgn_l, height_l, merge_l);
 
 		// Assemble return object
-		PROTECT(ans = allocVector(VECSXP,1)); n_protected++;
-		PROTECT(names = allocVector(STRSXP,1)); n_protected++;
+		PROTECT(ans = allocVector(VECSXP,3)); n_protected++;
+		PROTECT(names = allocVector(STRSXP,3)); n_protected++;
 
 		SET_VECTOR_ELT(ans, 0, assgn);
 		SET_STRING_ELT(names, 0, mkChar("assgn"));
+
+		SET_VECTOR_ELT(ans, 1, height);
+		SET_STRING_ELT(names, 1, mkChar("height"));
+
+		SET_VECTOR_ELT(ans, 2, merge);
+		SET_STRING_ELT(names, 2, mkChar("merge"));
 
 		setAttrib(ans, R_NamesSymbol, names);
 		UNPROTECT(n_protected);
 
 
 		return ans;
-    }
+  }
 
 }
 
