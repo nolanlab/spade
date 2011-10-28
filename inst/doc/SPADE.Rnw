@@ -83,7 +83,7 @@ library(spade)
 @
 
 <<sampleData >>=
-data_file_path = system.file(paste("extdata","SimulatedRawData.fcs",sep=.Platform$file.sep), package = "spade")
+data_file_path = system.file(file.path("extdata","SimulatedRawData.fcs"), package = "spade")
 @
 
 The example data, shown in Figure~\ref{fig:biaxial}, has two parameters with (in \texttt{arcsinh} space) a very apparent ``trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data.
