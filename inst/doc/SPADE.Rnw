@@ -14,6 +14,13 @@
 \begin{document}
 \setkeys{Gin}{width=.8\textwidth, height=.8\textwidth}
 
+<<echo=FALSE, results=hide>>=
+sanitize <- function(str) {
+  gsub('\\','/',str,fixed=TRUE)
+}
+@
+
+
 \maketitle
 \begin{center}
 {\tt michael.d.linderman@gmail.com}
@@ -125,18 +132,18 @@ SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Plat
 The number of plots is the product of the number of FCS files and number of annotated markers, i.e., there is a plot for each FCS file and each annotation parameters (median or fold change). In this simple case there is only one file, and thus we cannot compute any fold changes. We can however look at per-cluster medians of \texttt{marker1} and \texttt{marker2} (that is the median value for that marker for all cells assigned to a particular cluster).
 
 <<renameFiles, results=hide, echo=FALSE>>=
-file.rename(paste(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker1_clust.pdf",sep=.Platform$file.sep),paste(output_dir,"pdf","marker1.pdf",sep=.Platform$file.sep));
-file.rename(paste(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker2_clust.pdf",sep=.Platform$file.sep),paste(output_dir,"pdf","marker2.pdf",sep=.Platform$file.sep));
+file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker1_clust.pdf"),file.path(output_dir,"pdf","marker1.pdf"));
+file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker2_clust.pdf"),file.path(output_dir,"pdf","marker2.pdf"));
 @
 
 \begin{figure}
 \centering
-\includegraphics{\Sexpr{paste(output_dir,"pdf","marker1.pdf",sep=.Platform$file.sep)}}
+\includegraphics{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker1.pdf"))}}}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics{\Sexpr{paste(output_dir,"pdf","marker2.pdf",sep=.Platform$file.sep)}}
+\includegraphics{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker2.pdf"))}}}
 \end{figure}
 
 Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are "high" and the rare populate where both markers are "low".
