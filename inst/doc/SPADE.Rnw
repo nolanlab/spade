@@ -138,12 +138,12 @@ file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster
 
 \begin{figure}
 \centering
-\includegraphics{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker1.pdf"))}}}
+\includegraphics{{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker1"))}}}}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker2.pdf"))}}}
+\includegraphics{{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker2"))}}}}
 \end{figure}
 
 Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are "high" and the rare populate where both markers are "low".
