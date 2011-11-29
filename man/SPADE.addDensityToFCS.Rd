@@ -49,12 +49,13 @@ The name of the written file is returned
 Michael Linderman
 }
 \examples{
-	# Load two-parameters sample data included in package
-	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
-	
-	output_dir <- tempdir()
-	
-	# Compute and annotate FCS file with density
-	density_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
-	SPADE.addDensityToFCS(data_file_path, density_file_path, cols=c("marker1","marker2"))
+	# Not run
+	## Load two-parameters sample data included in package
+	#data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+	#
+	#output_dir <- tempdir()
+	#
+	## Compute and annotate FCS file with density
+	#density_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
+	#SPADE.addDensityToFCS(data_file_path, density_file_path, cols=c("marker1","marker2"))
 }

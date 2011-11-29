@@ -29,14 +29,15 @@ Michael Linderman
 \code{\link{SPADE.annotateGraph}}
 }
 \examples{
-	# Load two-parameters sample data included in package
-	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+	# Not run
+	## Load two-parameters sample data included in package
+	#data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
 
-	# Run basic SPADE analyses, clustering on two parameters. 
-	output_dir <- tempdir()
-	SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
+	## Run basic SPADE analyses, clustering on two parameters. 
+	#output_dir <- tempdir()
+	#SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
 
-	# Generate PDFs of annotated graphs (into output_dir/pdf) using arch layout
-	mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
-	SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=SPADE.layout.arch(mst_graph))
+	## Generate PDFs of annotated graphs (into output_dir/pdf) using arch layout
+	#mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+	#SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=SPADE.layout.arch(mst_graph))
 }
