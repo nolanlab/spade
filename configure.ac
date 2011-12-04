@@ -1,4 +1,4 @@
-AC_INIT([spade], 0.99.0)
+AC_INIT([spade], 1.0.0)
 AC_PREREQ([2.59])
 
 m4_include([m4/ac_openmp.m4])
