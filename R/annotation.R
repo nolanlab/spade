@@ -3,7 +3,12 @@ SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
     SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
 }
 
-SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor=5.0, cluster_cols=NULL, comp=TRUE) {
+SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), cluster_cols=NULL, comp=TRUE) {
+
+	if (!is.null(arcsinh_cofactor)) {
+		warning("arcsinh_cofactor is deprecated, use transform=flowCore::arcsinhTransform(...) instead")
+		transforms <- flowCore::arcsinhTransform(a=0, b=1/arcsinh_cofactor)
+	}
 
 	data  <- c()
 	
@@ -30,16 +35,20 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 		}	
 		
 		data <- rbind(data, in_data[, idxs,drop=FALSE])
-		colnames(data) <- sapply(idxs,function(x) { 
-			name <- ifelse(pd$name[x] != pd$desc[x], paste(pd$name[x],pd$desc[x],sep="_"), pd$name[x]) 
-			if (pd$name[x] %in% cluster_cols)
-				name <- paste(name,"clust",sep="_")
-			name
-		})
 	}
-	 	
+	 
+
 	clst <- data[,"cluster"]
 	data <- data[,colnames(data)!="cluster",drop=FALSE]
+	data <- SPADE.transform.matrix(data, transforms) 
+
+	# TODO: Weird things were being down to the naming, and this breaks that so we can do the transforms cleanly...
+	colnames(data) <- sapply(colnames(data),function(x) { 
+		if (x %in% cluster_cols)
+			x <- paste(x,"clust",sep="_")
+		x
+	})
+
 
 	ids  <- 1:num.clusters
 	if (any(is.na(match(unique(clst),ids)))) {
@@ -50,7 +59,7 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 	medians <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
 	cvs     <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
 	for (i in ids) {
-		data_s  <- asinh(subset(data, clst == i) / arcsinh_cofactor)
+		data_s  <- subset(data, clst == i)
 		
 		count[i,1]  <- nrow(data_s)
 		medians[i,] <- apply(data_s, 2, median)

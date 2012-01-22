@@ -33,13 +33,28 @@ SPADE.writeGraph <- function(graph, outfilename) {
      write.graph(graph, outfilename, format="gml")
 }
 
-SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfilename, 
-	cols=NULL, k=200, arcsinh_cofactor=5.0, desired_samples=50000,comp=TRUE) {
-    
+SPADE.FCSToTree <- function(
+	infilenames, 
+	outfilename, 
+	graphfilename,
+	clusterfilename, 
+	cols=NULL, 
+	k=200, 
+	arcsinh_cofactor=NULL,
+	transforms=flowCore::arcsinhTransform(a=0, b=0.2),
+	desired_samples=50000,
+	comp=TRUE
+) {
+  
+	if (!is.null(arcsinh_cofactor)) {
+		warning("arcsinh_cofactor is deprecated, use transform=flowCore::arcsinhTransform(...) instead")
+		transforms <- flowCore::arcsinhTransform(a=0, b=1/arcsinh_cofactor)
+	}
+
 	data = c()
 	for (f in infilenames) {
 		# Load in FCS file
-		in_fcs  <- SPADE.read.FCS(f,comp=comp);
+		in_fcs  <- SPADE.read.FCS(f, comp=comp);
 		in_data <- exprs(in_fcs);
 	
 		params <- parameters(in_fcs);
@@ -66,7 +81,7 @@ SPADE.FCSToTree <- function(infilenames, outfilename, graphfilename, clusterfile
 	}
 	
 	# Compute the cluster centers, marking any single observation clusters as NA
-	clust <- SPADE.cluster(asinh(data/arcsinh_cofactor),k);
+	clust <- SPADE.cluster(SPADE.transform.matrix(data, transforms), k);
 	
 	# Write out FCS file downsampled data used in clustering, along with assignment
 	# Strip out observations in single observation clusters
