@@ -49,16 +49,17 @@ Underlying implementations have been parallelized with OpenMP. Set
 }
 
 \examples{
-	# Load two-parameters sample data included in package
-	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+	# Not run
+	## Load two-parameters sample data included in package
+	#data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
 
-	output_dir <- tempdir()
-	
-	# Compute and annotate FCS file with density
-	density_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
-	SPADE.addDensityToFCS(data_file_path, density_file_path, cols=c("marker1","marker2"))
+	#output_dir <- tempdir()
+	#
+	## Compute and annotate FCS file with density
+	#density_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
+	#SPADE.addDensityToFCS(data_file_path, density_file_path, cols=c("marker1","marker2"))
 
-	# Downsample FCS file based on density
-	downsample_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
-	SPADE.downsampleFCS(density_file_path, downsample_file_path)
+	## Downsample FCS file based on density
+	#downsample_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs",sep="")
+	#SPADE.downsampleFCS(density_file_path, downsample_file_path)
 }
