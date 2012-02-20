@@ -9,7 +9,7 @@ to the FCS file. The local density is modeled as an integer count of the number 
 observations within a specified distance of the observation.
 }
 \usage{
-SPADE.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = 5, kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000, comp=TRUE)
+SPADE.addDensityToFCS(infilename, outfilename, cols = NULL, arcsinh_cofactor = NULL, transforms=flowCore::arcsinhTransform(a = 0, b = 0.2), kernel_mult = 5, apprx_mult = 1.5, med_samples = 2000, comp=TRUE)
 }
 \arguments{
   \item{infilename}{
@@ -25,7 +25,10 @@ the parameter names extracted from the FCS file. The default=NULL will
 use all parameters. 
 }
   \item{arcsinh_cofactor}{
-Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+Deprecated in favor of more flexible flowCore transforms. See \code{transforms} argument.
+}
+	\item{transforms}{
+flowCore transform applied to data. If a single transform object, it is applied to all channels. If a named list, transform objects are applied to specific channels based on channel name. See \code{\link[flowCore]{arcsinhTransform}} for default transform.
 }
   \item{kernel_mult}{
 Multiplier of the minimum median distance within which other observations are

@@ -1,6 +1,5 @@
 \name{SPADE.markerMedians}
 \alias{SPADE.markerMedians}
-\alias{SPADE.annotateMarkers}
 \title{
 Compute marker medians, coefficient of variations and counts for clusters
 }
@@ -8,8 +7,7 @@ Compute marker medians, coefficient of variations and counts for clusters
 Compute the marker medians, coefficients of variation and observations counts for cluster annoated FCS files.
 }
 \usage{
-SPADE.markerMedians(files, num.clusters, cols = NULL, arcsinh_cofactor = 5, cluster_cols=NULL, comp=TRUE)
-SPADE.annotateMarkers(files, cols = NULL, arcsinh_cofactor = 5)
+SPADE.markerMedians(files, num.clusters, cols = NULL, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a = 0, b = 0.2), cluster_cols=NULL, comp=TRUE)
 }
 \arguments{
   \item{files}{
@@ -25,7 +23,10 @@ the parameter names extracted from the FCS file. The default=NULL will
 use all parameters. 
 }
   \item{arcsinh_cofactor}{
-Cofactor used in the arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+Deprecated in favor of more flexible flowCore transforms. See \code{transforms} argument.
+}
+	\item{transforms}{
+flowCore transform applied to data. If a single transform object, it is applied to all channels. If a named list, transform objects are applied to specific channels based on channel name. See \code{\link[flowCore]{arcsinhTransform}} for default transform.
 }
   \item{cluster_cols}{
 A vector of strings specifying columns that should be marked as having been used in clustering

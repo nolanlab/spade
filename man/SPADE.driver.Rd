@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a = 0, b = 0.2), downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
 }
 \arguments{
   \item{files}{
@@ -29,8 +29,11 @@ List of panels for median and fold change calculations. See details for specific
   \item{comp}{
 Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
-	\item{arcsinh_cofactor}{
-Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+  \item{arcsinh_cofactor}{
+Deprecated in favor of more flexible flowCore transforms. See \code{transforms} argument.
+}
+	\item{transforms}{
+flowCore transform applied to data. If a single transform object, it is applied to all channels. If a named list, transform objects are applied to specific channels based on channel name. See \code{\link[flowCore]{arcsinhTransform}} for default transform.
 }
   \item{downsampling_samples}{
 Desired number of samples remaining after downsampling files

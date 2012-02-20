@@ -6,7 +6,6 @@ export(
 	"SPADE.downsampleFCS",
 	"SPADE.FCSToTree",
 	"SPADE.addClusterToFCS",
-	"SPADE.annotateMarkers",
 	"SPADE.markerMedians",
 	"SPADE.layout.arch",
 	"SPADE.write.graph",

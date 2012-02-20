@@ -7,7 +7,7 @@ Annotate observations in FCS file with cluster assignment
 Annotate observations in a FCS file with cluster assignment
 }
 \usage{
-SPADE.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = 5, comp=TRUE)
+SPADE.addClusterToFCS(infilename, outfilename, clusterfilename, cols = NULL, arcsinh_cofactor = NULL, transforms=flowCore::arcsinhTransform(a = 0, b = 0.2), comp=TRUE)
 }
 \arguments{
   \item{infilename}{
@@ -26,7 +26,10 @@ the parameter names extracted from the FCS file. The default=NULL will
 use all parameters. 
 }
   \item{arcsinh_cofactor}{
-Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+Deprecated in favor of more flexible flowCore transforms. See \code{transforms} argument.
+}
+	\item{transforms}{
+flowCore transform applied to data. If a single transform object, it is applied to all channels. If a named list, transform objects are applied to specific channels based on channel name. See \code{\link[flowCore]{arcsinhTransform}} for default transform.
 }
   \item{comp}{
 Apply compensation matrix if present in SPILL or SPILLOVER keywords

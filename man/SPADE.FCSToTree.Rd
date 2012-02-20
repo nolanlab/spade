@@ -9,7 +9,7 @@ spanning tree connecting those clusters.
 }
 \usage{
 SPADE.FCSToTree(infilenames, outfilename, graphfilename, clusterfilename,
-		  cols = NULL, k = 200, arcsinh_cofactor = 5, 
+		  cols = NULL, k = 200, arcsinh_cofactor = NULL, transforms=flowCore::arcsinhTransform(a = 0, b = 0.2), 
 		  desired_samples = 50000, comp=TRUE)
 }
 \arguments{
@@ -36,7 +36,10 @@ Desired number of clusters. Algorithm might create between [k/2,3k/2]
 clusters.
 }
   \item{arcsinh_cofactor}{
-Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+Deprecated in favor of more flexible flowCore transforms. See \code{transforms} argument.
+}
+	\item{transforms}{
+flowCore transform applied to data. If a single transform object, it is applied to all channels. If a named list, transform objects are applied to specific channels based on channel name. See \code{\link[flowCore]{arcsinhTransform}} for default transform.
 }
   \item{desired_samples}{
 Desired number of samples to be used in clustering. Usually leave at default.

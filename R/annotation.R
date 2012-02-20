@@ -1,8 +1,3 @@
-SPADE.annotateMarkers <- function(files, cols=NULL, arcsinh_cofactor=5.0) {
-    warning("Deprecated: Use SPADE.markerMedians instead")
-    SPADE.markerMedians(files, cols=cols, arcsinh_cofactor=arcsinh_cofactor)
-}
-
 SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), cluster_cols=NULL, comp=TRUE) {
 
 	if (!is.null(arcsinh_cofactor)) {
