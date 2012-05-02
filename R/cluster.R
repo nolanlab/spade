@@ -5,7 +5,9 @@ SPADE.cluster <- function(tbl, k) {
     }
 
     # Transpose table before call into row major order
-    clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
+    # clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
+	cluster = Rclusterpp.hclust(tbl);
+	clust = list(assgn=cutree(cluster,k=k));
   
 	# Invalid clusters have assgn == 0
 	centers = c()
