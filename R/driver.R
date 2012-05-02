@@ -53,7 +53,23 @@ SPADE.installPlugin <- function(cytoscape_path) {
 }
 
 
-SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) {
+SPADE.driver <- function(
+	files,
+	file_pattern="*.fcs", 
+	out_dir=".", 
+	cluster_cols=NULL, 
+	panels=NULL, 
+	comp=TRUE, 
+	arcsinh_cofactor=NULL,   # deprecated 
+	transforms=flowCore::arcsinhTransform(a=0, b=0.2),
+	downsampling_samples=20000, 
+	downsampling_exclude_pctile=0.01, 
+	downsampling_target_pctile=0.05, 
+	k=200, 
+	clustering_samples=50000, 
+	layout=igraph:::layout.kamada.kawai, 
+	pctile_color=c(0.02,0.98)
+) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {
 		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
@@ -77,6 +93,11 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		})
 	}
 
+	if (!is.null(arcsinh_cofactor)) {
+		warning("arcsinh_cofactor is deprecated, use transform=flowCore::arcsinhTransform(...) instead")
+		transforms <- flowCore::arcsinhTransform(a=0, b=1/arcsinh_cofactor)
+	}
+
 	# Run downsampling/clustering/upsampling on all specified files 
 	density_files <- c()
 	sampled_files <- c()
@@ -85,7 +106,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		f_density <- paste(out_dir,basename(f),".density.fcs",sep="")
 		f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 
-		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor, comp=comp)
+		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, comp=comp, transforms=transforms)
 		SPADE.downsampleFCS(f_density, f_sampled, 
 							exclude_pctile=downsampling_exclude_pctile,
 							target_pctile=downsampling_target_pctile,
@@ -101,7 +122,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	graph_file <- paste(out_dir,"mst.gml",sep="")
 	SPADE.FCSToTree(sampled_files, cells_file, graph_file, clust_file, 
 					cols=cluster_cols, 
-					arcsinh_cofactor=arcsinh_cofactor, 
+					transforms=transforms,
 					k=k, 
 					desired_samples=clustering_samples,
 					comp=comp)
@@ -110,7 +131,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 	for (f in density_files) {
 		message("Upsampling file: ",f)
 		f_sampled <- paste(f,".cluster.fcs",sep="")
-		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, arcsinh_cofactor=arcsinh_cofactor,comp=comp)
+		SPADE.addClusterToFCS(f, f_sampled, cells_file, cols=cluster_cols, transforms=transforms, comp=comp)
 		sampled_files <- c(sampled_files, f_sampled)
 	}
 
@@ -135,7 +156,7 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 		if (!is.null(p$reference_files)) {
 			# Note assuming the ordering of files and sampled_files are identical...
 			reference_files   <- sapply(as.vector(p$reference_files), function(f) { sampled_files[match(f,basename(files))[1]] })
-			reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+			reference_medians <- SPADE.markerMedians(reference_files, vcount(graph), cols=p$fold_cols, transforms=transforms, cluster_cols=cluster_cols, comp=comp)
 		}
 
 		for (f in as.vector(p$panel_files)) {
@@ -144,12 +165,12 @@ SPADE.driver <- function(files, file_pattern="*.fcs", out_dir=".", cluster_cols=
 
 			# Compute the median marker intensities in each node, including the overall cell frequency per node	
 			message("Computing medians for file: ",f)
-			anno <- SPADE.markerMedians(f, vcount(graph), cols=p$median_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+			anno <- SPADE.markerMedians(f, vcount(graph), cols=p$median_cols, transforms=transforms, cluster_cols=cluster_cols, comp=comp)
 					
 			if (!is.null(reference_medians)) {	# If a reference file is specified								
 				# Compute the fold change compared to reference medians
 				message("Computing fold change for file: ",f)
-				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, arcsinh_cofactor=arcsinh_cofactor, cluster_cols=cluster_cols, comp=comp)
+				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, transforms=transforms, cluster_cols=cluster_cols, comp=comp)
 				fold <- fold_anno$medians - reference_medians$medians
 				
 				ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
