@@ -35,7 +35,7 @@ SPADE.flattenAnnotations <- function(annotations) {
 }
 
 SPADE.installPlugin <- function(cytoscape_path) {
-	source_path = system.file(paste("tools","CytoSpade.jar",sep=.Platform$file.sep), package = "spade")
+	source_path = system.file(paste("tools","CytoSpade.jar",sep=.Platform$file.sep), package = "spade")        
 	stopifnot(file.exists(source_path))
 
 	target_path = paste(cytoscape_path,"plugins",sep=.Platform$file.sep)
@@ -68,7 +68,8 @@ SPADE.driver <- function(
 	k=200, 
 	clustering_samples=50000, 
 	layout=igraph:::layout.kamada.kawai, 
-	pctile_color=c(0.02,0.98)
+	pctile_color=c(0.02,0.98),
+    population_rule_mappings=NULL
 ) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -194,6 +195,16 @@ SPADE.driver <- function(
 	attr_ranges <- t(sapply(attr_values, function(x) { quantile(x, probs=c(0.00, pctile_color, 1.00), na.rm=TRUE) }))
 	rownames(attr_ranges) <- sapply(rownames(attr_ranges), function(x) { gsub("[^A-Za-z0-9_]","",x) })
 	write.table(attr_ranges, paste(out_dir,"global_boundaries.table",sep=""), col.names=FALSE)
+
+    # Evaluate population rules if mapping provided
+    ruleDir = system.file(paste("tools","PopulationRules",sep=.Platform$file.sep),package="spade")
+    if (!is.null(population_rule_mappings)) {
+        foreach (filename in names(population_rule_mappings)) {
+            foreach (sampled_file in sample_files) {
+               SPADE.evalutateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
+            }
+        }
+    }    
 
 	invisible(NULL)
 }
