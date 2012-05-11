@@ -197,11 +197,13 @@ SPADE.driver <- function(
 	write.table(attr_ranges, paste(out_dir,"global_boundaries.table",sep=""), col.names=FALSE)
 
     # Evaluate population rules if mapping provided
-    ruleDir = system.file(paste("tools","PopulationRules",sep=.Platform$file.sep),package="spade")
+    ruleDir = system.file(paste("tools","PopulationRules","",sep=.Platform$file.sep),package="spade")
     if (!is.null(population_rule_mappings)) {
-        foreach (filename in names(population_rule_mappings)) {
-            foreach (sampled_file in sample_files) {
-               SPADE.evalutateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
+		cat("Evaluating Population Rules....\n")
+        for (filename in names(population_rule_mappings)) {
+			cat(paste("Rule:",filename,"\n",sep=" "))
+            for (sampled_file in sampled_files) {
+            	SPADE.evaluateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
             }
         }
     }    

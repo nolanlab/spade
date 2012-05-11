@@ -15,5 +15,6 @@ export(
 	"SPADE.plot.trees",
 	"SPADE.flattenAnnotations",
 	"SPADE.installPlugin",
-	"SPADE.evaluateCellTypeRule"
+	"SPADE.evaluateCellTypeRule",
+	"SPADE.read.FCS"
 )

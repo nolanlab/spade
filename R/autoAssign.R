@@ -24,11 +24,11 @@ SPADE.evaluateCellTypeRule = function(out_dir,fcsFileName,ruleCols,ruleDir,ruleF
 
 #dataDirectory = "/Users/rbruggner/Desktop/clusterForGarry/spadeTest/output/"
 #key = read.table(paste(dataDirectory,"../../manualKey.txt",sep=""),sep="\t",header=1)
-fcs = read.FCS(paste(fcsFileName,sep=""))
+fcs = SPADE.read.FCS(paste(fcsFileName,sep=""))
 
 
 data = exprs(fcs);
-data[,ruleCols] = asinh(data[,transformCols]/5)
+data[,ruleCols] = asinh(data[,ruleCols]/5)
 clusterIndex = which(colnames(data)=="cluster")
 
 
@@ -53,11 +53,11 @@ percents = sapply(ruleCols,markerPercents,clusterIds=clusterIds,data=data,median
 rownames(percents) = clusterIds
 #randomPercents = sapply(ruleCols,markerPercents,clusterIds=clusterIds,data=dataRandomized,medians=medians,clusterIndex=clusterIndex)
 #rownames(percents) = clusterIds
-
+message(paste("GML FILE:",paste(out_dir,"mst.gml",sep=""),"\n"))
 keyMST = read.graph(file=paste(out_dir,"mst.gml",sep=""),format="gml")
 layout_table = as.matrix(read.table(file=paste(out_dir,"layout.table",sep="")))
-
-fileMST = read.graph(file=paste(out_dir,fcsFileName,".medians.gml",sep=""),format="gml")
+message(paste(fcsFileName,".medians.gml",sep=""))
+fileMST = read.graph(file=paste(fcsFileName,".medians.gml",sep=""),format="gml")
 
 #ruleDir = "/Users/rbruggner/Desktop/clusterForGarry/populationRules/";
 
@@ -98,8 +98,7 @@ fileMST = read.graph(file=paste(out_dir,fcsFileName,".medians.gml",sep=""),forma
 
 annotation=list();
 annotation[["autoassign_probability"]]=probabilityMatrix
-
-SPADE.write.graph(SPADE.annotateGraph(fileMST, layout=layout_table, anno=annotation),file=paste(out_dir,fcsFileName,".medians.gml",sep=""),format="gml")
+SPADE.write.graph(SPADE.annotateGraph(fileMST, layout=layout_table, anno=annotation),file=paste(fcsFileName,".medians.gml",sep=""),format="gml")
 }
 
 
