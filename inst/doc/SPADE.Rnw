@@ -8,7 +8,7 @@
 \usepackage{graphicx}
 \usepackage{fullpage}
 
-\title{SPADE: Spanning Tree Progession of Density Normalized Events}
+\title{SPADE: Spanning Tree Progression of Density Normalized Events}
 \author{Michael Linderman, Erin Simonds, Zach Bjornson, Peng Qiu}
 
 \begin{document}
@@ -86,7 +86,7 @@ library(spade)
 data_file_path = system.file(file.path("extdata","SimulatedRawData.fcs"), package = "spade")
 @
 
-The example data, shown in Figure~\ref{fig:biaxial}, has two parameters with (in \texttt{arcsinh} space) a very apparent ``trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data.
+The example data, shown in Figure~\ref{fig:biaxial}, has two parameters with (in \texttt{arcsinh} space) a very apparent ``trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data, and in particular capture the rare population at the ``base'' of the trident and the transitional populations.
 
 \begin{figure}
 \centering
@@ -108,11 +108,14 @@ The typical entry point to \textbf{SPADE} is the driver function. The driver orc
 \end{enumerate}
 and provides useful defaults for \textbf{SPADE's} many control parameters.
 
-Basic use of the driver with the sample FCS file would look like the following. In this example we are clustering on the two parameters \texttt{marker1} and \texttt{marker2} shown in Figure~\ref{fig:biaxial}. More typically one clusters on a subset of the parameters, such as just surface markers, and then annotates the tree with medians and fold change values for the other, potentially functional, markers. Also more typically, one works with many FCS files. The driver will also accept a vector of files, or a directory containing the FCS files to be analyzed (the latter is the most common usage).
+Basic use of the driver with the sample FCS file would look like the following. In this example we are clustering on the two parameters \texttt{marker1} and \texttt{marker2} shown in Figure~\ref{fig:biaxial} and are transforming the data with the \texttt{arcsinh} transform supplied in the \textbf{flowCore} package. Numerous other transforms are provided by \textbf{flowCore}.
+
+More typically one clusters on a subset of the parameters, such as just surface markers, and then annotates the tree with medians and fold change values for the other, potentially functional, markers. Also more typically, one works with many FCS files. The driver will also accept a vector of files, or a directory containing the FCS files to be analyzed (the latter is the most common usage).
 
 <<runSPADE >>=
 output_dir <- tempdir()
-SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
+transforms <- c(`marker1`=flowCore::arcsinhTransform(a=0, b=0.2), `marker2`=flowCore::arcsinhTransform(a=0, b=0.2))
+SPADE.driver(data_file_path, out_dir=output_dir, transforms=transforms, cluster_cols=c("marker1","marker2"))
 @
 
 \textbf{SPADE} produces a number of files in the \texttt{output} directory including annotated tree structures for each FCS file. These trees are saved as GML files that can be opened by a number of graph visualization packages, including Cytoscape.
@@ -146,9 +149,11 @@ file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster
 \includegraphics{{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker2"))}}}}
 \end{figure}
 
-Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are "high" and the rare populate where both markers are "low".
+Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are ``high" and the rare populate where both markers are ``low". Further we can see the transitional populations between the base and tips of the trident. 
 
-This simple example is intended to show how \textbf{SPADE} can successfully recover the underlying "structure" of our data -- the "trident". In the immunological context, we seek to recover the structure of differentiation of immune cells, and in particular the hematopoietic lineage. We exploit the fact that "parents" and "children" in that differentiation process are close to each other in surface marker space, and further, are linked to together by transitional populations. By over-clustering and then linking those clusters we can successfully recover the structure of the differentiation process and then use that structure as a scaffolding on which to overlay phenotypic data of interest.
+This simple example is intended to show how \textbf{SPADE} can successfully recover the underlying ``structure" of our data -- the ``trident". In the immunological context, we seek to recover the structure of differentiation of immune cells, and in particular the hematopoietic lineage. We exploit the fact that ``parents" and ``children" in that differentiation process are close to each other in surface marker space, and further, are linked to together by transitional populations. By over-clustering and then linking those clusters we can successfully recover the structure of the differentiation process and then use that structure as a scaffolding on which to overlay phenotypic data of interest.
+
+In this case we are viewing the median value of the two surface markers overlaid on the entire structure of the data. Additional markers, or fold-change of markers, can be viewed similarly. 
 
 \begin{figure}
 \centering
@@ -157,7 +162,7 @@ This simple example is intended to show how \textbf{SPADE} can successfully reco
 \caption{SPADE tree annotated with CD34 expression in healthy human bone marrow (PBMC) samples analyzed via mass cytometry. Adapted from \cite{Bendall06052011}.}
 \end{figure}
 
-As a more complex example, Figure~\ref{fig:science} shows the result from an actual SPADE analysis of 30+ parameter flow cytometry data collected with the CyToF mass cytometer\cite{Bendall06052011}. Cells were clustered using 13 surface markers. Putative cell populations were annotated manually and the nodes moved  on the page to better resemble textbook drawings of the hematopoietic lineage. However, the trees themselves, that is the nodes and edges, were produced automatically and unsupervised by the SPADE algorithm. The tree in Figure~\ref{fig:science} is annotated with median expression of CD34, which as expected is "high" for hematopoietic stem cells (HSCs). This tree shows how SPADE can recover the structure of hematopoietic lineage, including rare populations such as HSCs, and how that structure can be used as a scaffold on which additional data is overlaid.
+As a more complex example, Figure~\ref{fig:science} shows the result from an actual SPADE analysis of 30+ parameter flow cytometry data collected with the CyToF mass cytometer performed for \cite{Bendall06052011} (that is not generated as part of this vignette). Cells were clustered using 13 surface markers. Putative cell populations were annotated manually and the nodes moved  on the page to better resemble textbook drawings of the hematopoietic lineage. However, the trees themselves, that is the nodes and edges, were produced automatically and unsupervised by the SPADE algorithm. The tree in Figure~\ref{fig:science} is annotated with median expression of CD34, which as expected is "high" for hematopoietic stem cells (HSCs). This tree shows how SPADE can recover the structure of hematopoietic lineage, including rare populations such as HSCs, and how that structure can be used as a scaffold on which additional data is overlaid.
 
 This example workflow gives a brief introduction to using \textbf{SPADE}. The interested user is pointed to \cite{Qiu10022011}, and in particular it supplemental material, as well as \cite{Bendall06052011} for more detail about the SPADE algorithm and how it can be used to analyze flow cytometry data. Additional documentation for SPADE (including a wiki), the source code, bug tracker and other material can be found at \url{http://cytospade.org}.
 
