@@ -65,6 +65,6 @@ Michael Linderman
 	SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
 
 	# Generate PDFs of annotated graphs (into output_dir/pdf)
-	mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
-	SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=igraph:::layout.kamada.kawai(mst_graph))
+	mst_graph <- igraph0:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+	SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=igraph0:::layout.kamada.kawai(mst_graph))
 }

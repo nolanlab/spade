@@ -67,9 +67,9 @@ SPADE.driver <- function(
 	downsampling_target_pctile=0.05, 
 	k=200, 
 	clustering_samples=50000, 
-	layout=igraph:::layout.kamada.kawai, 
+	layout=igraph0:::layout.kamada.kawai, 
 	pctile_color=c(0.02,0.98),
-    population_rule_mappings=NULL
+  population_rule_mappings=NULL
 ) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {

@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=5.0, downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph0:::layout.kamada.kawai, pctile_color=c(0.02,0.98), population_rule_mappings=NULL) 
 }
 \arguments{
   \item{files}{
@@ -30,7 +30,10 @@ List of panels for median and fold change calculations. See details for specific
 Apply compensation matrix if present in SPILL or SPILLOVER keywords
 }
 	\item{arcsinh_cofactor}{
-Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data
+DEPRECATED. Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data.
+}
+	\item{transforms}{
+Transform object to apply to data. A single transform object will be applied to all channels. To apply different transforms to specific channels use a named vector of transform objects (where names are parameter names). 
 }
   \item{downsampling_samples}{
 Desired number of samples remaining after downsampling files
@@ -66,7 +69,7 @@ Michael Linderman
 }
 \examples{
 	# Load two-parameters sample data included in package
-	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
+	data_file_path = system.file(file.path("extdata","SimulatedRawData.fcs"), package = "spade")
 
 	# Run basic SPADE analyses, clustering on two parameters. Annotated graphs will be
 	# in output_dir. See SPADE.plot.trees to generate PDFs of annotated graphs.

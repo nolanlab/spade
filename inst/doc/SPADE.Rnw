@@ -124,7 +124,7 @@ grep("^libloc",dir(output_dir),invert=TRUE,value=TRUE)
 It is often helpful to visualize the results directly. \textbf{SPADE} includes functions for plotting all possible trees as PDFs.
 
 <<plotTrees >>=
-mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+mst_graph <- igraph0:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
 layout    <- read.table(paste(output_dir,"layout.table",sep=.Platform$file.sep))
 SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=as.matrix(layout))
 @
