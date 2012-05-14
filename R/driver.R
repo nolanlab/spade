@@ -68,8 +68,7 @@ SPADE.driver <- function(
 	k=200, 
 	clustering_samples=50000, 
 	layout=igraph0:::layout.kamada.kawai, 
-	pctile_color=c(0.02,0.98),
-  population_rule_mappings=NULL
+	pctile_color=c(0.02,0.98)
 ) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -195,18 +194,6 @@ SPADE.driver <- function(
 	attr_ranges <- t(sapply(attr_values, function(x) { quantile(x, probs=c(0.00, pctile_color, 1.00), na.rm=TRUE) }))
 	rownames(attr_ranges) <- sapply(rownames(attr_ranges), function(x) { gsub("[^A-Za-z0-9_]","",x) })
 	write.table(attr_ranges, paste(out_dir,"global_boundaries.table",sep=""), col.names=FALSE)
-
-    # Evaluate population rules if mapping provided
-    ruleDir = system.file(paste("tools","PopulationRules","",sep=.Platform$file.sep),package="spade")
-    if (!is.null(population_rule_mappings)) {
-		cat("Evaluating Population Rules....\n")
-        for (filename in names(population_rule_mappings)) {
-			cat(paste("Rule:",filename,"\n",sep=" "))
-            for (sampled_file in sampled_files) {
-            	SPADE.evaluateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
-            }
-        }
-    }    
 
 	invisible(NULL)
 }
