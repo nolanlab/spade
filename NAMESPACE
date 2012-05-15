@@ -14,5 +14,6 @@ export(
 	"SPADE.driver",
 	"SPADE.plot.trees",
 	"SPADE.flattenAnnotations",
-	"SPADE.installPlugin"
+	"SPADE.installPlugin",
+	"SPADE.read.FCS"
 )
