@@ -57,6 +57,7 @@ Michael Linderman
 	\code{\link{SPADE.driver}}
 }
 \examples{
+\dontrun{
 	# Load two-parameters sample data included in package
 	data_file_path = paste(installed.packages()["spade","LibPath"],"spade","extdata","SimulatedRawData.fcs",sep=.Platform$file.sep)
 
@@ -67,4 +68,5 @@ Michael Linderman
 	# Generate PDFs of annotated graphs (into output_dir/pdf)
 	mst_graph <- igraph0:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
 	SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=igraph0:::layout.kamada.kawai(mst_graph))
+}
 }

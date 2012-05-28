@@ -1,13 +1,11 @@
 # Cluster observations into ~k clusters
 SPADE.cluster <- function(tbl, k) {
-    if (nrow(tbl) > 60000) {
+	if (nrow(tbl) > 60000) {
 		warning("Potentially too many observations for the clustering step",immediate=TRUE);
-    }
+  }
 
-    # Transpose table before call into row major order
-    # clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
-	cluster = Rclusterpp.hclust(tbl);
-	clust = list(assgn=cutree(cluster,k=k));
+  # Transpose table before call into row major order
+	clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
   
 	# Invalid clusters have assgn == 0
 	centers = c()
