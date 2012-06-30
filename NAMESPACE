@@ -3,6 +3,7 @@ importFrom(Biobase, exprs, "exprs<-", description, "description<-", pData, "pDat
 import(flowCore)
 export(
 	"SPADE.addDensityToFCS",
+	"SPADE.transform.FCS",
 	"SPADE.downsampleFCS",
 	"SPADE.FCSToTree",
 	"SPADE.addClusterToFCS",
@@ -12,6 +13,7 @@ export(
 	"SPADE.write.graph",
 	"SPADE.annotateGraph",
 	"SPADE.driver",
+	"SPADE.density",
 	"SPADE.plot.trees",
 	"SPADE.flattenAnnotations",
 	"SPADE.installPlugin",
