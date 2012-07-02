@@ -35,7 +35,7 @@ SPADE.flattenAnnotations <- function(annotations) {
 }
 
 SPADE.installPlugin <- function(cytoscape_path) {
-	source_path = system.file(paste("tools","CytoSpade.jar",sep=.Platform$file.sep), package = "spade")        
+	source_path = system.file(paste("tools","CytoSPADE.jar",sep=.Platform$file.sep), package = "spade")        
 	stopifnot(file.exists(source_path))
 
 	target_path = paste(cytoscape_path,"plugins",sep=.Platform$file.sep)
