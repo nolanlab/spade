@@ -1,18 +1,24 @@
-# SPADE -- Spanning Tree Progression of Density Normalized Events
+# SPADE: Spanning Tree Progression of Density Normalized Events
 
-SPADE is a visualization and analysis tool for high-dimensional flow cytometry data. SPADE is implemented as an R package and can be installed via R's packaging facilities. Additionally a GUI is provided, as a [Cytoscape](http://www.cytoscape.org) plugin, for setting-up and interactively visualizing the results of SPADE analyses. Please see the project homepage at [cytospade.org](http://www.cytospade.org) or the github wiki for the primary documentation. This README is primarily targeted at developers working on SPADE itself.
+SPADE is a visualization and analysis tool for high-dimensional flow cytometry data. SPADE is implemented as an R package and can be installed via R's packaging facilities. Additionally a GUI is provided, as a [Cytoscape](http://www.cytoscape.org) plugin, for setting-up and interactively visualizing the results of SPADE analyses. Please see the project homepage at [cytospade.org](http://www.cytospade.org) or the [wiki](https://github.com/nolanlab/spade/wiki) for the primary documentation.
 
-## Prerequisites
-1. Latest version of [R](http://www.r-project.org/) and the following packages: igraph0, flowCore
+## User Setup
 
-## Setup
+Please refer to the [wiki pages](https://github.com/nolanlab/spade/wiki), especially the [Getting Started](https://github.com/nolanlab/spade/wiki/GettingStarted) page.
+
+## Developer Setup
+
+### Prerequisites
+1. Latest version of [R](http://www.r-project.org/)
+1. igraph0
+1. flowCore
+
+### Building and Installing
 The SPADE package has a C++ core that must be built before use. SPADE successfully builds on Linux, OSX and Windows (with Rtools), although Windows users will not be able to take advantage of the OpenMP parallelization used within SPADE. SPADE can be installed from the command line via
 
     $ R CMD INSTALL <SPADE PATH>
 
-
-### Building on Windows
-You will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) that matches your R distribution. (Important note: if you're using R 2.14, you should use Rtools 2.15. Even though Rtools 2.14 is listed as compatible, it requires extra work to make g++ work. Rtools 2.15 works out of the box.) After installation make sure that your `PATH` contains the neccessary Rtools binary directories, e.g.:
+On Windows, you will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) that matches your R distribution. (Important note: if you're using R 2.14, you should use Rtools 2.15. Even though Rtools 2.14 is listed as compatible, it requires extra work to make g++ work. Rtools 2.15 works out of the box.) After installation make sure that your `PATH` contains the neccessary Rtools binary directories, e.g.:
 
 1. Open *Control Panel -> System*
 1. Click on *Advanced Tab* and then on *Environment Variables*
@@ -21,8 +27,7 @@ You will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) 
 
     c:\Rtools\bin;c:\Rtools\perl\bin;c:\Rtools\gcc-4.6.3\bin;c:\Rtools\MinGW\bin;c:\Program Files\R\<your R version>\bin;
 
-
-## Building Packages
+### Building Packages
 Source packages can be built with
 
     $ R CMD build <SPADE PATH>
@@ -31,8 +36,10 @@ and binary packages with
 
     $ R CMD build --no-vignettes --binary <SPADE PATH>
 
-## Tips and Resources
+### Tips and Resources
 * [R manual for writing extensions](http://cran.r-project.org/doc/manuals/R-exts.html)
+
+- - -
 
 ## Citations
 SPADE was developed in the Plevritis and Nolan Labs at Stanford University, and is described in the following publications:
