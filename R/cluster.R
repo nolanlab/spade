@@ -21,7 +21,7 @@ SPADE.cluster <- function(tbl, k) {
 			is.na(clust$assgn) <- obs
 		}
     }
-    return(list(centers=centers,assign=clust$assgn))
+    return(list(centers=centers,assign=clust$assgn,hclust=cluster))
 }
 
 SPADE.clustersToMST <- function(centers, method="manhattan") {
@@ -84,6 +84,12 @@ SPADE.FCSToTree <- function(
 	
 	# Compute the cluster centers, marking any single observation clusters as NA
 	clust <- SPADE.cluster(SPADE.transform.matrix(data, transforms), k);
+	
+	# Generate path for merge order
+	mergeOrderPath = paste(dirname(outfilename),"/","merge_order.txt",sep="");
+
+	# Write the DEFAULT merge order
+	write.table(clust$hclust$merge,file=mergeOrderPath,sep="\t",quote=F,row.names=F,col.names=F)
 	
 	# Write out FCS file downsampled data used in clustering, along with assignment
 	# Strip out observations in single observation clusters
