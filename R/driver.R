@@ -69,7 +69,7 @@ SPADE.driver <- function(
 	clustering_samples=50000, 
 	layout=igraph:::layout.kamada.kawai, 
 	pctile_color=c(0.02,0.98),
-    population_rule_mappings=NULL
+    fcs_channel_mappings=NULL
 ) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -198,11 +198,14 @@ SPADE.driver <- function(
 
     # Evaluate population rules if mapping provided
     ruleDir = system.file(paste("tools","PopulationRules","",sep=.Platform$file.sep),package="spade")
-    if (!is.null(population_rule_mappings)) {
+    
+    if (!is.null(fcs_channel_mappings)) {
 		cat("Evaluating Population Rules....\n")
+		#Ketaki: Is this correct? Look at only one fcs file. The channel ordering should be the same across all fcs files.
+        population_rule_mappings = SPADE.createPopulationMapping(sampled_files[1], ruleDir, fcsFileMappings)
         for (filename in names(population_rule_mappings)) {
-			cat(paste("Rule:",filename,"\n",sep=" "))
-            for (sampled_file in sampled_files) {
+        	for (sampled_file in sampled_files) {
+				cat(paste("Rule:",filename,"\n",sep=" "))
             	SPADE.evaluateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
             }
         }
@@ -544,3 +547,48 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
     }
 }
 
+SPADE.createPopulationMapping <- function(fcsFile, ruleDir, fcsFileMappings){
+        fcs = SPADE.read.FCS(fcsFile)
+		params <- parameters(fcs);
+		pd     <- pData(params);
+		fcsColumns = as.vector(pd$name)
+		columnNumber = 0
+		proteinToColumnNumber <- new.env()
+		for(col in fcsColumns)
+		{
+			columnNumber = columnNumber + 1
+			if (fcsChannelMapping[col] != "NULL" && fcsChannelMapping[col] != "-")
+			{
+				proteinName = fcsChannelMapping[[col]]
+				proteinToColumnNumber[[proteinName]] = columnNumber
+			}
+		}
+
+		population_mapping_rules = new.env()
+		for (filename in list.files(ruleDir,"*.txt"))
+		{
+			rules = read.table(paste(ruleDir,filename,sep=""), col.names=c("metal","highlo","protein"))
+			ruleTranslation = as.vector("")
+			for (protein in as.array(rules$protein))
+			{
+				if (length(proteinToColumnNumber[[protein]]) > 0 && proteinToColumnNumber[[protein]] != "NULL")
+				{
+					fcsColumnNumber = proteinToColumnNumber[[protein]]
+					ruleTranslation = append(ruleTranslation, fcsColumnNumber)
+				}
+				else
+				{
+					ruleTranslation = as.vector("")
+					break;
+				}
+			}
+			
+			ruleTranslation = ruleTranslation[-1]
+			if (length(ruleTranslation) > 0)
+			{
+				population_mapping_rules[[filename]] = ruleTranslation
+			}
+		}
+
+    population_mapping_rules
+}
