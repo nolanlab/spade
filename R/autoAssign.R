@@ -63,11 +63,11 @@ fileMST = read.graph(file=paste(fcsFileName,".medians.gml",sep=""),format="gml")
 
 #for (ruleFile in list.files(ruleDir,pattern=".txt")){
 	cat(paste("RULE:",ruleFile,"\n"));
-	populationRules = read.table(paste(ruleDir,ruleFile,sep=""),sep="\t",header=F,col.names=c("parameter","hilo","desc"),comment.char="#")
+	populationRules = read.table(paste(ruleDir,ruleFile,sep=""),sep="\t",header=F,col.names=c("parameter","hilo","protein"),comment.char="#")
 	probability=1;
 	#randomProbability=1;
 	for (ruleId in 1:nrow(populationRules)){
-		parameter = as.vector(populationRules[ruleId,"parameter"])
+		parameter = as.vector(populationRules[ruleId,"protein"])
 	  if (populationRules[ruleId,"hilo"]=="+"){
 	  	print(paste(parameter,"Hi"))
 	  	probability = probability*percents[,ruleId];
