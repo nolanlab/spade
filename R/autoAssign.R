@@ -12,8 +12,9 @@ indexOf = function(x,data){
 }
 
 cleanStr = function(x){
-	x = sub(" ","_",x);
-  x = sub(".txt","",x)
+	x = gsub("-","_",x)
+	x = gsub(" ","_",x)
+    x = gsub(".txt","",x)
 }
 
 
@@ -98,7 +99,49 @@ fileMST = read.graph(file=paste(fcsFileName,".medians.gml",sep=""),format="gml")
 
 annotation=list();
 annotation[["autoassign_probability"]]=probabilityMatrix
-SPADE.write.graph(SPADE.annotateGraph(fileMST, layout=layout_table, anno=annotation),file=paste(fcsFileName,".medians.gml",sep=""),format="gml")
+gmlFilename = paste(fcsFileName,".medians.gml",sep="")
+SPADE.write.graph(SPADE.annotateGraph(fileMST, layout=layout_table, anno=annotation),file=gmlFilename, format="gml")
+
+cat("Create merge order file.\n")
+#cellType=gsub("-", "", cleanStr(ruleFile)) #This should be part of cleanStr
+#cellType=gsub(" ", "", cellType) #cleanStr should use gsub instead of sub
+cellType=cleanStr(ruleFile)
+SPADE.createMergeOrderByCellProbability(out_dir=out_dir, gmlFilename=gmlFilename, cellType=cellType, outputFileName=paste("MergeOrder", ruleFile, sep=" "))
+}
+
+SPADE.createMergeOrderByCellProbability = function(out_dir, gmlFilename, cellType, outputFileName) {
+		
+		cat(paste("out_dir:", out_dir, "gmlFilename:", gmlFilename, "cellType:", cellType, "outputFileName:", outputFileName, "\n"))
+		
+		#Read gml file
+		g=read.graph(paste(gmlFilename,sep=""),format="gml")
+		
+		#Create dataframe with node id and the cell type probability
+		probabilityParameter = paste("autoassign_probability", cellType, "_probability", sep="")
+		probabilities=get.vertex.attribute(g, probabilityParameter)
+		df=data.frame(node=V(g)$id,probability=probabilities)
+	
+		#Sort by descending probability
+		df=df[order(df$probability,decreasing=TRUE),]
+		
+		#Cluster the nodes
+		cluster_count = 0
+		output = list()
+		cluster_count = 1
+		src = as.numeric(as.character(df$node[[1]]))	# this is the source "name" and not "id"
+		tgt = as.numeric(as.character(df$node[[2]]))	# this is the target "name" and not "id"
+		output[[cluster_count]] = c(-src,-tgt)
+		cluster_count = cluster_count + 1
+	   for (i in 3:nrow(df)) {
+		   src = -1 * as.numeric(as.character(df$node[[i]]))	# this is the source "name" and not "id"
+		   tgt = cluster_count - 1
+		   output[[cluster_count]] = c(src, tgt)
+		   cluster_count = cluster_count + 1
+		}
+		
+		#Write out the file
+		output_df=as.data.frame(do.call("rbind", output), stringsAsFactors = FALSE)
+		write.table(output_df, paste(out_dir, outputFileName, sep=""))
 }
 
 
