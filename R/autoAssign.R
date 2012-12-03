@@ -103,10 +103,8 @@ gmlFilename = paste(fcsFileName,".medians.gml",sep="")
 SPADE.write.graph(SPADE.annotateGraph(fileMST, layout=layout_table, anno=annotation),file=gmlFilename, format="gml")
 
 cat("Create merge order file.\n")
-#cellType=gsub("-", "", cleanStr(ruleFile)) #This should be part of cleanStr
-#cellType=gsub(" ", "", cellType) #cleanStr should use gsub instead of sub
 cellType=cleanStr(ruleFile)
-SPADE.createMergeOrderByCellProbability(out_dir=out_dir, gmlFilename=gmlFilename, cellType=cellType, outputFileName=paste("MergeOrder", ruleFile, sep=" "))
+SPADE.createMergeOrderByCellProbability(out_dir=out_dir, gmlFilename=gmlFilename, cellType=cellType, outputFileName=paste("MergeOrder", gsub(" ", "_", ruleFile), sep="_"))
 }
 
 SPADE.createMergeOrderByCellProbability = function(out_dir, gmlFilename, cellType, outputFileName) {
