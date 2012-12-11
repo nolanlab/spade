@@ -173,13 +173,14 @@ SPADE.driver <- function(
 				message("Computing fold change for file: ",f)
 				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, transforms=transforms, cluster_cols=cluster_cols, comp=comp)
 				fold <- fold_anno$medians - reference_medians$medians
+				raw_fold <- fold_anno$raw_medians / reference_medians$raw_medians
 				
 				ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
 				colnames(ratio) <- c("percenttotalratiolog")
 				is.na(ratio) <- fold_anno$count == 0 | reference_medians$count == 0
 
 				# Merge the fold-change columns with the count, frequency, and median columns
-				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold))	
+				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold, raw_fold=raw_fold))	
 			}
 
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
