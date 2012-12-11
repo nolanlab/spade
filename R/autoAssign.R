@@ -117,7 +117,7 @@ SPADE.createMergeOrderByCellProbability = function(out_dir, gmlFilename, cellTyp
 		#Create dataframe with node name and the cell type probability
 		probabilityParameter = paste("autoassign_probability", cellType, "_probability", sep="")
 		probabilities=get.vertex.attribute(g, probabilityParameter)
-		df=data.frame(node=V(g)$name,probability=probabilities)
+		df=data.frame(node=V(g)$id,probability=probabilities)
 	
 		#Sort by descending probability
 		df=df[order(df$probability,decreasing=TRUE),]
@@ -126,12 +126,12 @@ SPADE.createMergeOrderByCellProbability = function(out_dir, gmlFilename, cellTyp
 		cluster_count = 0
 		output = list()
 		cluster_count = 1
-		src = as.numeric(as.character(df$node[[1]]))	# this is the source "name" and not "id"
-		tgt = as.numeric(as.character(df$node[[2]]))	# this is the target "name" and not "id"
+		src = as.numeric(as.character(df$node[[1]]))	# this is the source "id" and not "name"
+		tgt = as.numeric(as.character(df$node[[2]]))	# this is the target "id" and not "name"
 		output[[cluster_count]] = c(-src,-tgt)
 		cluster_count = cluster_count + 1
 	   for (i in 3:nrow(df)) {
-		   src = -1 * as.numeric(as.character(df$node[[i]]))	# this is the source "name" and not "id"
+		   src = -1 * as.numeric(as.character(df$node[[i]]))	# this is the source "id" and not "name"
 		   tgt = cluster_count - 1
 		   output[[cluster_count]] = c(src, tgt)
 		   cluster_count = cluster_count + 1
