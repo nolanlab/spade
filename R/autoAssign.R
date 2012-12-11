@@ -114,10 +114,10 @@ SPADE.createMergeOrderByCellProbability = function(out_dir, gmlFilename, cellTyp
 		#Read gml file
 		g=read.graph(paste(gmlFilename,sep=""),format="gml")
 		
-		#Create dataframe with node id and the cell type probability
+		#Create dataframe with node name and the cell type probability
 		probabilityParameter = paste("autoassign_probability", cellType, "_probability", sep="")
 		probabilities=get.vertex.attribute(g, probabilityParameter)
-		df=data.frame(node=V(g)$id,probability=probabilities)
+		df=data.frame(node=V(g)$name,probability=probabilities)
 	
 		#Sort by descending probability
 		df=df[order(df$probability,decreasing=TRUE),]
