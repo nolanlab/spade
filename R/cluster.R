@@ -2,14 +2,15 @@
 SPADE.cluster <- function(tbl, k) {
 	if (nrow(tbl) > 60000) {
 		warning("Potentially too many observations for the clustering step",immediate=TRUE);
-  }
+	}
 
-  # Transpose table before call into row major order
-	clust <- .Call("SPADE_cluster",t(tbl),as.integer(k))
-  
+	# Transpose table before call into row major order
+	cluster = Rclusterpp.hclust(tbl);
+	clust = list(assgn=cutree(cluster,k=k));
+
 	# Invalid clusters have assgn == 0
 	centers = c()
-    is.na(clust$assgn) <- which(clust$assgn == 0)
+	is.na(clust$assgn) <- which(clust$assgn == 0)
 	for (i in c(1:max(clust$assgn, na.rm=TRUE))) {  
 		obs <- which(clust$assgn == i)
 		if (length(obs) > 1) {
@@ -18,19 +19,19 @@ SPADE.cluster <- function(tbl, k) {
 		} else {
 			is.na(clust$assgn) <- obs
 		}
-    }
-    return(list(centers=centers,assign=clust$assgn,hclust=cluster))
+	}
+	return(list(centers=centers,assign=clust$assgn,hclust=cluster))
 }
 
 SPADE.clustersToMST <- function(centers, method="manhattan") {
-    adjacency  <- dist(centers, method=method)
-    full_graph <- graph.adjacency(as.matrix(adjacency),mode="undirected",weighted=TRUE)
-    mst_graph  <- minimum.spanning.tree(full_graph)
-    mst_graph
+	adjacency  <- dist(centers, method=method)
+	full_graph <- graph.adjacency(as.matrix(adjacency),mode="undirected",weighted=TRUE)
+	mst_graph  <- minimum.spanning.tree(full_graph)
+	mst_graph
 }
 
 SPADE.writeGraph <- function(graph, outfilename) {
-     write.graph(graph, outfilename, format="gml")
+	 write.graph(graph, outfilename, format="gml")
 }
 
 SPADE.FCSToTree <- function(

@@ -1,12 +1,12 @@
 # Transpose data before call to put in row major order
 SPADE.assignToCluster <- function(tbl, cluster_data, cluster_assign)
-    .Call("SPADE_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
+	.Call("SPADE_assign",t(tbl),t(cluster_data),as.integer(cluster_assign))
 
 SPADE.addClusterToFCS <- function(
 	infilename, 
 	outfilename, 
 	clusterfilename,
-  cols=NULL, 
+	cols=NULL, 
 	arcsinh_cofactor=NULL,
 	transforms=flowCore::arcsinhTransform(a=0, b=0.2),	
 	comp=TRUE

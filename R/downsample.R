@@ -1,6 +1,6 @@
 # Transpose table before call to put in row major order
 SPADE.density <- function(tbl, kernel_mult=5.0, apprx_mult=1.5, med_samples=2000)
-    .Call("SPADE_density",t(tbl),kernel_mult,apprx_mult,med_samples)
+	.Call("SPADE_density",t(tbl),kernel_mult,apprx_mult,med_samples)
 
 SPADE.addDensityToFCS <- function(
 	infilename, 
@@ -72,28 +72,28 @@ SPADE.addDensityToFCS <- function(
 }
 
 SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL) {
-    # Load in FCS file
-    in_fcs  <- SPADE.read.FCS(infilename,comp=FALSE,transform=FALSE);
-    in_data <- exprs(in_fcs);
+	# Load in FCS file
+	in_fcs  <- SPADE.read.FCS(infilename,comp=FALSE,transform=FALSE);
+	in_data <- exprs(in_fcs);
 
-    params <- parameters(in_fcs);
-    pd     <- pData(params);
+	params <- parameters(in_fcs);
+	pd     <- pData(params);
 
-    d_idx <- match("density",pd$name)
-    if (is.na(d_idx)) {
+	d_idx <- match("density",pd$name)
+	if (is.na(d_idx)) {
 	stop("No density parameter in FCS file")
-    }
-    
-    # boundary[1]: exclusion, boundary[2]: potential target
-    boundary <- quantile(in_data[,d_idx],c(exclude_pctile,target_pctile),names=FALSE)
-    
-    out_data <- subset(in_data, in_data[,d_idx] > boundary[1]) # Exclusion    
+	}
+	
+	# boundary[1]: exclusion, boundary[2]: potential target
+	boundary <- quantile(in_data[,d_idx],c(exclude_pctile,target_pctile),names=FALSE)
+	
+	out_data <- subset(in_data, in_data[,d_idx] > boundary[1]) # Exclusion    
 
-    density <- out_data[,d_idx]
-    if (is.null(desired_samples)) {
+	density <- out_data[,d_idx]
+	if (is.null(desired_samples)) {
 		boundary <- boundary[2]
 		out_data <- subset(out_data,boundary/density > runif(nrow(out_data)))
-    } else if (desired_samples < nrow(out_data)) {
+	} else if (desired_samples < nrow(out_data)) {
 		# Need to find target density such there are approximately desired_samples
 		# remaining after downsampling. To do so we solve for the density such that
 		# the sum of samples below that density plus the expected value of
@@ -109,8 +109,8 @@ SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, ta
 			boundary <- targets[which.min(targets-density_s > 0)]
 		}
 		out_data  <- subset(out_data,boundary/density > runif(length(density)))
-    }
+	}
 
-    out_frame <- flowFrame(out_data,params,description=description(in_fcs))
-    write.FCS(out_frame,outfilename)
+	out_frame <- flowFrame(out_data,params,description=description(in_fcs))
+	write.FCS(out_frame,outfilename)
 }

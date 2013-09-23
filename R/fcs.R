@@ -8,7 +8,7 @@ SPADE.read.FCS <- function(file, comp=TRUE, verbose=FALSE, ...) {
 	pd     <- pData(params)
 
 	# Replace any null descs with names (for FSC-A, FSC-W, SSC-A)
-  bad_col <- grep("^[a-zA-Z0-9]+",pd$desc,invert=TRUE)
+	bad_col <- grep("^[a-zA-Z0-9]+",pd$desc,invert=TRUE)
 	if (length(bad_col) > 0) {
 		keyval <- keyword(fcs)
 		for (i in bad_col) {
