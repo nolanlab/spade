@@ -1,6 +1,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
+#include <R_ext/Print.h>
 #include <cmath>
 #include <stdint.h>
 #include <limits>
@@ -16,19 +17,20 @@
 
 namespace {
 
-    typedef double Data_t;
-    typedef double Dist_t;
-    typedef int    Count_t;
-    
-    Dist_t 
-    distance(const Data_t* a, const Data_t* b, size_t dim) {
-	Dist_t d_l = 0.;
-	for (size_t i=0; i<dim; i++)
-	    d_l += fabs(a[i]-b[i]);
-	return d_l;
-    }
+	typedef double Data_t;
+	typedef double Dist_t;
+	typedef int    Count_t;
+	
+	Dist_t distance(const Data_t* a, const Data_t* b, size_t dim) {
+		Dist_t d_l = 0.;
+		
+		for (size_t i=0; i<dim; i++)
+			d_l += fabs(a[i]-b[i]);
 
-  Dist_t compute_median_min_dist(Data_t *data, size_t dim, size_t obs, size_t num_samples) {					
+		return d_l;
+	}
+
+	Dist_t compute_median_min_dist(Data_t *data, size_t dim, size_t obs, size_t num_samples) {					
 		Dist_t* min_dists = new Dist_t[num_samples];
 
 		// Create an randomly shuffled array of indices for
@@ -38,20 +40,21 @@ namespace {
 			idxs[i] = i;
 		std::random_shuffle(idxs, idxs+obs);
 
-		#ifdef _OPENMP
+#ifdef _OPENMP
 		#pragma omp parallel for shared(min_dists)
-		#endif
+#endif
+
 		for (size_t i=0; i<num_samples; i++) {  	    
-	   	size_t idx = idxs[i];  // Uniformly sampled cell
-	    
+			size_t idx = idxs[i];  // Uniformly sampled cell
+			
 			// Compute distance to all other neighbors (skipping myself)
-	    Data_t *point = &data[idx*dim];
-	    Dist_t min_l = std::numeric_limits<Dist_t>::max();
-	    for (size_t j=0; j<idx; j++)
+			Data_t *point = &data[idx*dim];
+			Dist_t min_l = std::numeric_limits<Dist_t>::max();
+			for (size_t j=0; j<idx; j++)
 				min_l = std::min(min_l,distance(point, &data[j*dim], dim));
-	    for (size_t j=idx+1; j<obs; j++)
+			for (size_t j=idx+1; j<obs; j++)
 				min_l = std::min(min_l,distance(point, &data[j*dim], dim));
-	    min_dists[i] = min_l;	
+			min_dists[i] = min_l;	
 		}
 
 		// Determine median
@@ -62,20 +65,23 @@ namespace {
 		delete min_dists;
 	
 		return median_min_dist;
-  }
+	}
 
-    void
-    count_neighbors(Data_t* data, size_t dim, size_t obs, Dist_t kernel_width, Dist_t apprx_width, Count_t* densities) 
-    {
+	void count_neighbors(Data_t* data, size_t dim, size_t obs, Dist_t kernel_width, Dist_t apprx_width, Count_t* densities) {
 		std::fill(densities, densities+obs, 0);
+
 #ifdef _OPENMP
 		#pragma omp parallel for shared(densities)	
 #endif
-		for (size_t i=0; i<obs; i++) {	    
+		for (size_t i=0; i<obs; i++) {
 			if (densities[i] > 0)
 				continue;
 
-			std::vector<size_t> apprxs;  // Keep track on observations we can approximate
+			if (!(i % 100000))
+				Rprintf("  Estimated downsampling-I progress: %2.0f%% ...\n",
+					std::min(99.0,((double)i)/obs * 100.0));
+
+			std::vector<size_t> apprxs; // Keep track on observations we can approximate
 			Data_t *point = &data[i*dim];
 			Count_t c = 0;
 
@@ -95,39 +101,39 @@ namespace {
 #else
 				densities[apprxs[j]] = c;
 #endif
-			
 			}
+
 			densities[i] = c;
 		}
 
-    }	
-        
+		Rprintf("  Estimated downsampling-I progress: %2.0f%% ...\n", 100.0);
+
+	}	
+				
 } // anonymous namespace
 
 extern "C" {
 
-    SEXP 
-    SPADE_density(SEXP tbl, SEXP kernel_mult, SEXP apprx_mult, SEXP med_samples) {
-	// tbl is column major order, transposed to be row major
-	size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
-	       dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
-	Data_t kernel_mult_l = static_cast<Data_t>(asReal(kernel_mult)),
-	       apprx_mult_l  = static_cast<Data_t>(asReal(apprx_mult));
-	size_t med_samples_l = static_cast<size_t>(asInteger(med_samples));	
+	SEXP SPADE_density(SEXP tbl, SEXP kernel_mult, SEXP apprx_mult, SEXP med_samples) {
+		// tbl is column major order, transposed to be row major
+		size_t obs = static_cast<size_t>(INTEGER(GET_DIM(tbl))[1]), 
+					 dim = static_cast<size_t>(INTEGER(GET_DIM(tbl))[0]);
+		Data_t kernel_mult_l = static_cast<Data_t>(asReal(kernel_mult)),
+					 apprx_mult_l  = static_cast<Data_t>(asReal(apprx_mult));
+		size_t med_samples_l = static_cast<size_t>(asInteger(med_samples));	
 
-	SEXP densities;
-	PROTECT(densities = allocVector(INTSXP, obs));
-	Count_t* densities_l = static_cast<Count_t*>(INTEGER(densities));
+		SEXP densities;
+		PROTECT(densities = allocVector(INTSXP, obs));
+		Count_t* densities_l = static_cast<Count_t*>(INTEGER(densities));
 
-	Dist_t median_min_dist = compute_median_min_dist(static_cast<Data_t*>(REAL(tbl)), dim, obs, std::min(obs,med_samples_l)),
-	       kernel_width    = kernel_mult_l * median_min_dist,
-	       apprx_width     = apprx_mult_l  * median_min_dist;
+		Dist_t median_min_dist = compute_median_min_dist(static_cast<Data_t*>(REAL(tbl)), dim, obs, std::min(obs,med_samples_l)),
+					 kernel_width    = kernel_mult_l * median_min_dist,
+					 apprx_width     = apprx_mult_l  * median_min_dist;
 	
-	count_neighbors(static_cast<Data_t*>(REAL(tbl)), dim, obs, kernel_width, apprx_width, densities_l);	
+		count_neighbors(static_cast<Data_t*>(REAL(tbl)), dim, obs, kernel_width, apprx_width, densities_l);	
 	
-	UNPROTECT(1);
-	return densities;
-    }
-
+		UNPROTECT(1);
+		return densities;
+	}
 
 } // extern
