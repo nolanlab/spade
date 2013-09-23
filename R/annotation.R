@@ -33,8 +33,9 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 		if (any(is.na(idxs))) { 
 			stop("Invalid column specifier") 
 		}	
-		
+
 		data <- rbind(data, in_data[, idxs,drop=FALSE])
+
 	}
 	
 
@@ -42,14 +43,13 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 	data <- data[,colnames(data)!="cluster",drop=FALSE]
 	data_t <- SPADE.transform.matrix(data, transforms) 
 
-	# TODO: Weird things were being down to the naming, and this breaks that so we can do the transforms cleanly...
+	# TODO: Weird things were being done to the naming, and this breaks that so we can do the transforms cleanly...
 	colnames(data) <- sapply(colnames(data),function(x) { 
 		if (x %in% cluster_cols)
 			x <- paste(x,"clust",sep="_")
 		x
 	})
 	colnames(data_t) = colnames(data)
-
 
 	ids  <- 1:num.clusters
 	if (any(is.na(match(unique(clst),ids)))) {
@@ -70,7 +70,6 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 		cvs[i,]     <- apply(data_s_t, 2, function(d) { 100*sd(d)/abs(mean(d)) })
 	} 
 	percenttotal <- matrix((count / sum(count)) * 100.0, nrow=num.clusters, ncol=1, dimnames=list(ids, "percenttotal"))
-
 	list(count=count, medians=medians, raw_medians=raw_medians, cvs=cvs, percenttotal=percenttotal)
 }
 
@@ -172,7 +171,7 @@ SPADE.annotateGraph <- function(graph, layout=NULL, anno=NULL) {
 		if (!is.matrix(l)) {
 			stop(paste("Argument:",quote(l),"must be a matrix"))
 		}
-		vt <- V(graph)[match(rownames(l),V(graph)$name)-1]  # Vertex IDS are 0 indexed
+		vt <- V(graph)[match(rownames(l),V(graph)$name)]  # Vertex IDS are 1 indexed
 		for (c in colnames(l)) {
 			graph <- set.vertex.attribute(graph,ifelse(names(anno)[i] == c,c,paste(names(anno)[i],c,sep="")),index=vt, value=l[,c])
 		}
@@ -231,7 +230,7 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 				val <- get.vertex.attribute(graph,a,index=v)
 				if (!is.na(val) && !is.nan(val))
 					writeLines(write.attr(a,val),con=file)
-			} 	    
+			}
 
 			if (length(v_attr_g) > 0) {
 				writeLines("graphics [",con=file)
@@ -243,7 +242,7 @@ SPADE.write.graph <- function(graph, file="", format = c("gml")) {
 				}
 				writeLines("]",con=file)
 			}
-			  
+			
 			writeLines("]",con=file)
 		}
 		

@@ -10,7 +10,7 @@ Please refer to the [wiki pages](https://github.com/nolanlab/spade/wiki), especi
 
 ### Prerequisites
 1. Latest version of [R](http://www.r-project.org/)
-1. igraph0
+1. igraph
 1. flowCore
 
 ### Building and Installing
@@ -44,6 +44,7 @@ and binary packages with
 ## Citations
 SPADE was developed in the Plevritis and Nolan Labs at Stanford University, and is described in the following publications:
 
+* Linderman MD, Bjornson Z, Simonds EF, Qiu P, Bruggner RV, Sheode K, Meng TH, Plevritis SK, Nolan GP, ["CytoSPADE: high-performance analysis and visualization of high-dimensional cytometry data"](http://www.ncbi.nlm.nih.gov/pubmed/22782546). *Bioinformatics*, 2012.
 * Peng Qiu, Erin F. Simonds, Sean C. Bendall, Kenneth D. Gibbs, Robert V. Bruggner, Michael D. Linderman, Karen Sachs, Garry P. Nolan, Sylvia K. Plevritis, ["Phenotypically determined self-organization of flow cytometry data with spanning-tree progression analysis of density normalized events"](http://dx.doi.org/doi%3A10.1038%2Fnbt.1991). *Nature Biotechnolgy*, 2011.
 * Sean C. Bendall, Erin F. Simonds, Peng Qiu, El-ad D. Amir, Peter O. Krutzik, Rachel Finck, Robert V. Bruggner, Rachel Melamed, Angelica Trejo, Olga I. Ornatsky, Robert S. Balderas, Sylvia K. Plevritis, Karen Sachs, Dana Pe’er, Scott D. Tanner, Garry P. Nolan, ["Single-Cell mass cytometry of differential immune and drug responses across a human hematopoietic continuum"](http://dx.doi.org/10.1126%2Fscience.1198704), *Science*, 332 (6030): 687-696.
 * Michael D. Linderman, Erin F. Simonds, Peng Qiu, Zach Bjornson, Nikesh Kotecha, Teresa H. Meng, Sylvia Plrevritis, Garry P. Nolan, "Algorithmically recovering the hematopoietic lineage from high-dimensional cytometry data using SPADE", *Congress of the Intl. Society for Advancement of Cytometry*, 2010.
