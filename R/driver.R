@@ -67,8 +67,9 @@ SPADE.driver <- function(
 	downsampling_target_pctile=0.05, 
 	k=200, 
 	clustering_samples=50000, 
-	layout=igraph0:::layout.kamada.kawai, 
-	pctile_color=c(0.02,0.98)
+	layout=igraph:::layout.kamada.kawai, 
+	pctile_color=c(0.02,0.98),
+    fcs_channel_mappings_json=NULL
 ) {
 
 	if (length(files) == 1 && file.info(files)$isdir) {
@@ -172,13 +173,14 @@ SPADE.driver <- function(
 				message("Computing fold change for file: ",f)
 				fold_anno <- SPADE.markerMedians(f, vcount(graph), cols=p$fold_cols, transforms=transforms, cluster_cols=cluster_cols, comp=comp)
 				fold <- fold_anno$medians - reference_medians$medians
+				raw_fold <- fold_anno$raw_medians / reference_medians$raw_medians
 				
 				ratio <- log10(fold_anno$percenttotal / reference_medians$percenttotal); 
 				colnames(ratio) <- c("percenttotalratiolog")
 				is.na(ratio) <- fold_anno$count == 0 | reference_medians$count == 0
 
 				# Merge the fold-change columns with the count, frequency, and median columns
-				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold))	
+				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold, raw_fold=raw_fold))	
 			}
 
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
@@ -194,6 +196,25 @@ SPADE.driver <- function(
 	attr_ranges <- t(sapply(attr_values, function(x) { quantile(x, probs=c(0.00, pctile_color, 1.00), na.rm=TRUE) }))
 	rownames(attr_ranges) <- sapply(rownames(attr_ranges), function(x) { gsub("[^A-Za-z0-9_]","",x) })
 	write.table(attr_ranges, paste(out_dir,"global_boundaries.table",sep=""), col.names=FALSE)
+
+    # Evaluate population rules if mapping provided
+    ruleDir = system.file(paste("tools","PopulationRules","",sep=.Platform$file.sep),package="spade")
+    
+    if (!is.null(fcs_channel_mappings_json)) {
+    	library("rjson")
+    	library("hash")
+    	fcs_channel_mapping=fromJSON(fcs_channel_mappings_json)
+		cat("Evaluating Population Rules....\n")
+		#Ketaki: Is this correct? Look at only one fcs file. The channel ordering should be the same across all fcs files.
+        population_rule_mappings = SPADE.createPopulationMapping(sampled_files[1], ruleDir, fcs_channel_mapping)
+        for (filename in names(population_rule_mappings)) {
+        	for (sampled_file in sampled_files) {
+				cat(paste("Rule:",filename,"\n",sep=" "))
+				message("Evaluating population rule: ", filename, " for file: ", sampled_file)
+            	SPADE.evaluateCellTypeRule(out_dir,sampled_file,ruleCols=population_rule_mappings[[filename]],ruleDir=ruleDir,ruleFile=filename)     
+            }
+        }
+    }    
 
 	invisible(NULL)
 }
@@ -531,3 +552,62 @@ SPADE.plot.trees <- function(graph, files, file_pattern="*anno.Rsave", out_dir="
     }
 }
 
+SPADE.createPopulationMapping <- function(fcsFile, ruleDir, fcs_channel_mapping){
+	cat(paste("Processing FCS file:",fcsFile,"\n",sep=" "))
+	#Read FCS file
+	fcs = SPADE.read.FCS(paste(fcsFile,sep=""))
+
+	#Extract column names as a vector
+	params <- parameters(fcs);
+	pd     <- pData(params);
+	fcsColumns = as.vector(pd$name)
+
+	#Walk through FCS file and create proteinName --> columnNumber map
+	columnNumber = 0
+	proteinToColumnNumber <- new.env()
+	for(channelName in fcsColumns)
+	{
+		columnNumber = columnNumber + 1
+		if (fcs_channel_mapping[channelName] != "NULL" && fcs_channel_mapping[channelName] != "-")
+		{
+			proteinName = fcs_channel_mapping[[channelName]]
+			cat(paste("Found channelName to protein mapping:", channelName, proteinName, columnNumber, "\n", sep=" " ))
+			proteinToColumnNumber[[proteinName]] = columnNumber
+		}
+	}
+
+	population_mapping_rules = hash()
+	ruleDir = system.file(paste("tools","PopulationRules","",sep=.Platform$file.sep),package="spade")
+	for (filename in list.files(ruleDir,"*.txt"))
+	{
+		rules = read.table(paste(ruleDir,filename,sep=""), col.names=c("channel","hilo","protein"))
+		cat(paste("Processing rule:", ruleDir, filename, "\n", sep=" " ))
+
+		#Initialize a new vector -- there may be a more elegant way of doing this.
+		ruleTranslation = as.vector("")
+		for (protein in as.array(rules$protein))
+		{
+			if (length(proteinToColumnNumber[[protein]]) > 0 && proteinToColumnNumber[[protein]] != "NULL")
+			{
+				fcsColumnNumber = proteinToColumnNumber[[protein]]
+				ruleTranslation = append(ruleTranslation, fcsColumnNumber)
+			}
+			else
+			{
+				ruleTranslation = as.vector("")
+				cat(paste("protein ", protein, " not found."))
+				cat(paste("Cannot process rule:", ruleDir, filename, "\n", sep=" " ))
+				break; #Cannot process this rule file
+			}
+		}
+		
+		ruleTranslation = ruleTranslation[-1]
+		if (length(ruleTranslation) > 0)
+		{
+			cat(paste("Successfully processed rule:", ruleDir, filename, "\n", sep=" " ))
+			population_mapping_rules[[filename]] = as.numeric(ruleTranslation)
+		}
+	}
+
+    population_mapping_rules
+}

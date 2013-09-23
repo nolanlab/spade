@@ -1,12 +1,12 @@
 Package: spade
 Title: SPADE -- An analysis and visualization tool for Flow Cytometry
-Version: 1.5.1
+Version: 1.6
 Author: M. Linderman, P. Qiu, E. Simonds, Z. Bjornson
 Description: SPADE, or Spanning tree Progression of Density normalized Events, is an analysis and visualization tool for high dimensional flow cytometry data that organizes cells into hierarchies of related phenotypes.
 Maintainer: Michael Linderman <michael.d.linderman@gmail.com>
 Imports: Biobase, flowCore
 Suggests: flowViz
-Depends: R (>= 2.11), igraph0
+Depends: R (>= 2.11), igraph0, Rclusterpp 
 License: GPL-2
 biocViews: FlowCytometry, GraphsAndNetworks, GUI, Visualization, Clustering
 URL: http://cytospade.org

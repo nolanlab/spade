@@ -40,7 +40,7 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 
 	clst <- data[,"cluster"]
 	data <- data[,colnames(data)!="cluster",drop=FALSE]
-	data <- SPADE.transform.matrix(data, transforms) 
+	data_t <- SPADE.transform.matrix(data, transforms) 
 
 	# TODO: Weird things were being down to the naming, and this breaks that so we can do the transforms cleanly...
 	colnames(data) <- sapply(colnames(data),function(x) { 
@@ -48,6 +48,7 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 			x <- paste(x,"clust",sep="_")
 		x
 	})
+	colnames(data_t) = colnames(data)
 
 
 	ids  <- 1:num.clusters
@@ -57,17 +58,20 @@ SPADE.markerMedians <- function(files, num.clusters, cols=NULL, arcsinh_cofactor
 
 	count   <- matrix(0,  nrow=num.clusters, ncol=1, dimnames=list(ids, "count"))
 	medians <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
+	raw_medians <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
 	cvs     <- matrix(NA, nrow=num.clusters, ncol=ncol(data), dimnames=list(ids,colnames(data)))
 	for (i in ids) {
 		data_s  <- subset(data, clst == i)
+		data_s_t <- subset(data_t, clst == i)
 		
-		count[i,1]  <- nrow(data_s)
-		medians[i,] <- apply(data_s, 2, median)
-		cvs[i,]     <- apply(data_s, 2, function(d) { 100*sd(d)/abs(mean(d)) })
+		count[i,1]  <- nrow(data_s_t)
+		medians[i,] <- apply(data_s_t, 2, median)
+		raw_medians[i,] <- apply(data_s, 2, median)
+		cvs[i,]     <- apply(data_s_t, 2, function(d) { 100*sd(d)/abs(mean(d)) })
 	} 
 	percenttotal <- matrix((count / sum(count)) * 100.0, nrow=num.clusters, ncol=1, dimnames=list(ids, "percenttotal"))
 
-  list(count=count, medians=medians, cvs=cvs, percenttotal=percenttotal)
+  list(count=count, medians=medians, raw_medians=raw_medians, cvs=cvs, percenttotal=percenttotal)
 }
 
 SPADE.layout.arch <-  function(mst_graph) {
