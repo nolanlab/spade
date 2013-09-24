@@ -62,9 +62,10 @@ SPADE.driver <- function(
 	comp=TRUE, 
 	arcsinh_cofactor=NULL,   # deprecated 
 	transforms=flowCore::arcsinhTransform(a=0, b=0.2),
-	downsampling_samples=20000, 
+	downsampling_target_number=NULL, 
+	downsampling_target_pctile=NULL,
+	downsampling_target_percent=0.1,
 	downsampling_exclude_pctile=0.01, 
-	downsampling_target_pctile=0.05, 
 	k=200, 
 	clustering_samples=50000, 
 	layout=igraph:::layout.kamada.kawai, 
@@ -113,10 +114,12 @@ SPADE.driver <- function(
 		f_sampled <- paste(out_dir,basename(f),".downsample.fcs",sep="")
 
 		SPADE.addDensityToFCS(f, f_density, cols=cluster_cols, comp=comp, transforms=transforms)
-		SPADE.downsampleFCS(f_density, f_sampled, 
+		SPADE.downsampleFCS(f_density,
+							f_sampled, 
 							exclude_pctile=downsampling_exclude_pctile,
 							target_pctile=downsampling_target_pctile,
-							desired_samples=downsampling_samples)
+							target_number=downsampling_target_number,
+							target_percent=downsampling_target_percent)
 
 		density_files <- c(density_files, f_density)
 		sampled_files <- c(sampled_files, f_sampled)	

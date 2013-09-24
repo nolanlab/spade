@@ -65,10 +65,10 @@ LIBRARY_PATH="lib/"
 # Set this to the transforms for each channel
 TRANSFORMS=c("Cd(110,111,112,114)"=flowCore::arcsinhTransform(a=0, b=0.2), "CD11c(Tb159)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD14(Dy160)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD19(Nd142)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD20(Dy161)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD235a(Sm152)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd110)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd111)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd112)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd114)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD33(Nd148)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD4(Gd158)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD45(Dy163)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD8a(Dy162)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "Cell_length"=flowCore::linearTransform(a=1.0), "DNA(Ir191)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "DNA(Ir193)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "HLA-DR(Dy164)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "Time"=flowCore::linearTransform(a=1.0))
 
-# Set this to the desired number of events remaining after downsampling files.  Recommended:  50000
-DOWNSAMPLED_EVENTS=50000
-# Set this to NULL if using downsampled_events.
+# Pick one of these and set the rest to NULL.
+DOWNSAMPLING_TARGET_NUMBER=NULL
 DOWNSAMPLING_TARGET_PCTILE=NULL
+DOWNSAMPLING_TARGET_PERCENT=0.1 # 10% -- recommended.
 
 # Set this to the desired number of events to use for clustering.  Recommended:  50000
 CLUSTERING_SAMPLES=50000
@@ -114,7 +114,7 @@ Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
 
-SPADE.driver(FILE_TO_PROCESS, file_pattern="*", out_dir=OUTPUT_DIR, cluster_cols=CLUSTERING_MARKERS, panels=PANELS, transforms=TRANSFORMS, layout=LAYOUT_FUNCTION, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_target_pctile=DOWNSAMPLING_TARGET_PCTILE, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
+SPADE.driver(FILE_TO_PROCESS, file_pattern="*", out_dir=OUTPUT_DIR, cluster_cols=CLUSTERING_MARKERS, panels=PANELS, transforms=TRANSFORMS, layout=LAYOUT_FUNCTION, downsampling_target_percent=DOWNSAMPLING_TARGET_PERCENT, downsampling_target_number=DOWNSAMPLING_TARGET_NUMBER, downsampling_target_pctile=DOWNSAMPLING_TARGET_PCTILE, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 
 LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
 MST_GRAPH <- read.graph(paste(OUTPUT_DIR,"mst.gml",sep=""),format="gml")

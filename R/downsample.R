@@ -71,7 +71,14 @@ SPADE.addDensityToFCS <- function(
 	write.FCS(out_frame,outfilename);
 }
 
-SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, target_pctile=0.05, desired_samples=NULL) {
+SPADE.downsampleFCS <- function(
+	infilename,
+	outfilename,
+	exclude_pctile=0.01,
+	target_pctile=NULL,
+	target_number=NULL,
+	target_percent=0.1
+) {
 	# Load in FCS file
 	in_fcs  <- SPADE.read.FCS(infilename,comp=FALSE,transform=FALSE);
 	in_data <- exprs(in_fcs);
@@ -81,7 +88,7 @@ SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, ta
 
 	d_idx <- match("density",pd$name)
 	if (is.na(d_idx)) {
-	stop("No density parameter in FCS file")
+		stop("No density parameter in FCS file")
 	}
 	
 	# boundary[1]: exclusion, boundary[2]: potential target
@@ -89,12 +96,17 @@ SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, ta
 	
 	out_data <- subset(in_data, in_data[,d_idx] > boundary[1]) # Exclusion    
 
+	if (!is.null(target_percent)) {
+		target_number = round(target_percent * nrow(out_data))
+		message("Targeting ", target_number, " events for ", infilename)
+	}
+
 	density <- out_data[,d_idx]
-	if (is.null(desired_samples)) {
+	if (is.null(target_number)) {
 		boundary <- boundary[2]
 		out_data <- subset(out_data,boundary/density > runif(nrow(out_data)))
-	} else if (desired_samples < nrow(out_data)) {
-		# Need to find target density such there are approximately desired_samples
+	} else if (target_number < nrow(out_data)) {
+		# Need to find target density such there are approximately target_number
 		# remaining after downsampling. To do so we solve for the density such that
 		# the sum of samples below that density plus the expected value of
 		# samples retained above that density equals approximately the desired
@@ -103,12 +115,14 @@ SPADE.downsampleFCS <- function(infilename, outfilename, exclude_pctile=0.01, ta
 		cdf       <- rev(cumsum(1.0/rev(density_s)))
 		
 		# Default solution if target density smaller than any present
-		boundary <- desired_samples/cdf[1] 
+		boundary <- target_number/cdf[1] 
 		if (boundary > density_s[1]) {  # Boundary actually falls amongst densities present
-			targets <- (desired_samples-1:length(density_s)) / cdf 
+			targets <- (target_number-1:length(density_s)) / cdf 
 			boundary <- targets[which.min(targets-density_s > 0)]
 		}
 		out_data  <- subset(out_data,boundary/density > runif(length(density)))
+	} else if (target_number > nrow(out_data)) {
+		stop("More events requested than present in file")
 	}
 
 	out_frame <- flowFrame(out_data,params,description=description(in_fcs))
