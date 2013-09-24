@@ -17,5 +17,6 @@ export(
 	"SPADE.plot.trees",
 	"SPADE.flattenAnnotations",
 	"SPADE.installPlugin",
-	"SPADE.read.FCS"
+	"SPADE.read.FCS",
+	"SPADE.removeExistingDensityAndClusterColumns"
 )

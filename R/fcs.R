@@ -109,3 +109,33 @@ SPADE.build.flowFrame <- function(x) {
    
   flowFrame(x, as(data.frame(pd), "AnnotatedDataFrame"), description=dl)
 }
+
+SPADE.removeExistingDensityAndClusterColumns <- function(file) {
+	# Do not comp or transform ... make this step invisible.
+	input_file <- suppressWarnings(read.FCS(file))
+
+	input_file_names <- names(input_file)
+
+	if ("<cluster> cluster" %in% input_file_names ||
+		"<density> density" %in% input_file_names) {
+		# Drop those columns
+		cleaned <- input_file[,!(input_file_names %in% c("<cluster> cluster", "<density> density"))]
+
+		# Rename the original file. Increment the suffix if it already exists.
+		suffix <- as.integer(regmatches(file, gregexpr("(\\d+)$", file, perl=TRUE)))
+
+		if (is.na(suffix)) {
+			suffix <- ".orig1"
+			new_file_name <- cat(file, suffix, sep = "")
+			# NB: file.rename is a namespaced function, not a method of the argument.
+			file.rename(file, new_file_name)
+		} else {
+			suffix <- cat(".orig", suffix + 1, sep = "")
+			new_file_name <- sub("(.orig\\d+)$", suffix, file);
+			file.rename(file, new_file_name)
+		}
+
+		# Save with the original file name
+		write.FCS(cleaned, file)
+	}
+}

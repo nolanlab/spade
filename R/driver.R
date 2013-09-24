@@ -99,6 +99,11 @@ SPADE.driver <- function(
 		transforms <- flowCore::arcsinhTransform(a=0, b=1/arcsinh_cofactor)
 	}
 
+	# Strip any existing cluster and density columns from files
+	for (f in files) {
+		SPADE.removeExistingDensityAndClusterColumns(f)
+	}
+
 	# Run downsampling/clustering/upsampling on all specified files 
 	density_files <- c()
 	sampled_files <- c()
@@ -181,7 +186,7 @@ SPADE.driver <- function(
 				# Merge the fold-change columns with the count, frequency, and median columns
 				anno <- c(anno, list(percenttotalratiolog = ratio, fold = fold, raw_fold=raw_fold))	
 			}
-			
+
 			SPADE.write.graph(SPADE.annotateGraph(graph, layout=layout_table, anno=anno), paste(f,".medians.gml",sep=""), format="gml")
 			# We save an R native version of the annotations to simpify plotting, and other downstream operations
 			anno <- SPADE.flattenAnnotations(anno)
