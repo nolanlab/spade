@@ -224,14 +224,14 @@ SPADE.driver <- function(
 
 	### Produce statistics tables ###
 	message("Producing tables...")
-	dir.create(paste(OUTPUT_DIR,'tables',sep='/'),recursive=TRUE,showWarnings=FALSE)
+	dir.create(paste(out_dir,'tables',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	# Find the files
-	files <- dir(OUTPUT_DIR,full.names=TRUE,pattern=glob2rx("*.anno.Rsave"))
+	files <- dir(out_dir,full.names=TRUE,pattern=glob2rx("*.anno.Rsave"))
 	# Find all the params
 	params <- unique(as.vector(sapply(files, function(f) { load(f); colnames(anno); })))
 
 	# Transposition 1: Rows are nodes, cols are files, files are params
-	dir.create(paste(OUTPUT_DIR,'tables','byAttribute',sep='/'),recursive=TRUE,showWarnings=FALSE)
+	dir.create(paste(out_dir,'tables','byAttribute',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (p in params) {
 		pivot <- c()
 		names <- c()
@@ -246,12 +246,12 @@ SPADE.driver <- function(
 		pivot <- cbind(1:nrow(pivot),pivot)
 		colnames(pivot) <- c("name", names)
 		if (!is.null(pivot) && ncol(pivot) > 0) {
-			write.csv(pivot, file=paste(OUTPUT_DIR,'/tables/byAttribute/',p,'_table','.csv',sep=''), row.names=FALSE)
+			write.csv(pivot, file=paste(out_dir,'/tables/byAttribute/',p,'_table','.csv',sep=''), row.names=FALSE)
 		}
 	}
 
 	# Transposition 2: Rows are nodes, cols are params, files are files
-	dir.create(paste(OUTPUT_DIR,'tables','bySample',sep='/'),recursive=TRUE,showWarnings=FALSE)
+	dir.create(paste(out_dir,'tables','bySample',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (f in files) {
 		load(f)
 		pivot <- anno
@@ -259,11 +259,11 @@ SPADE.driver <- function(
 		pivot <- cbind(1:nrow(pivot),pivot)
 		colnames(pivot) <- c("ID", names)
 		name <- gsub("output/([[:alnum:][:punct:]]+).fcs.density.fcs.cluster.fcs.anno.Rsave", "\\1", f)
-		write.csv(pivot, file=paste(OUTPUT_DIR,'/tables/bySample/',name,'_table','.csv',sep=''), row.names=FALSE)
+		write.csv(pivot, file=paste(out_dir,'/tables/bySample/',name,'_table','.csv',sep=''), row.names=FALSE)
 	}
 
 	# Transposition 3: Rows are params, cols are files, files are nodes
-	dir.create(paste(OUTPUT_DIR,'tables','byNodeID',sep='/'),recursive=TRUE,showWarnings=FALSE)
+	dir.create(paste(out_dir,'tables','byNodeID',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	# TODO 
 
 	invisible(NULL)
