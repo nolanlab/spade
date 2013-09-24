@@ -126,11 +126,11 @@ SPADE.removeExistingDensityAndClusterColumns <- function(file) {
 
 		if (is.na(suffix)) {
 			suffix <- ".orig1"
-			new_file_name <- cat(file, suffix, sep = "")
+			new_file_name <- paste(file, suffix, sep = "")
 			# NB: file.rename is a namespaced function, not a method of the argument.
 			file.rename(file, new_file_name)
 		} else {
-			suffix <- cat(".orig", suffix + 1, sep = "")
+			suffix <- paste(".orig", suffix + 1, sep = "")
 			new_file_name <- sub("(.orig\\d+)$", suffix, file);
 			file.rename(file, new_file_name)
 		}
