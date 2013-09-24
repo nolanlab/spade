@@ -3,7 +3,7 @@
 #
 # runSPADE:  R wrapper script for SPADE tree construction
 # Erin Simonds - esimonds@stanford.edu
-# Version 2.5 - November 18, 2010
+# Version 2.6 - September 24, 2013
 #
 # Command line instructions:
 #   1) Make sure the first line of this file is your Rscript path (found in the same directory as R)
@@ -47,27 +47,28 @@
 FILE_TO_PROCESS="FCS_files/"
 
 # Set this to the reagent names ($P*S keywords from the FCS file) to be used for clustering and tree construction.  Usually these are the surface markers.
-SURFACE_MARKERS=c("Cell_length","CD45","CD19","CD47","CD34","CD33","CD38","CD56","CD20","CD10","DNA","110_114-CD3")
+CLUSTERING_MARKERS=c("CD3(Cd114)Dd", "CD19(Nd142)Dd", "CD11c(Tb159)Dd", "CD14(Dy160)Dd", "CD20(Dy161)Dd")
 
-# Set this to the reagent names ($P*S keywords from the FCS file) to be used for fold-change calculations.  Usually these are phospho-specific markers.  If you don't have any, set to NULL
-FUNCTIONAL_MARKERS=c("pP38","pStat5","pErk","pSTAT3","pSLP76","IkB","pPLCg2","cCaspase3","pS6","pSrc","pCreb","pCrkL","pc-Cbl","pShp2","pBtk/Itk","pSyk")
-
-# Set this to all markers for which you want the basal medians.
-ALL_MARKERS=c(SURFACE_MARKERS, FUNCTIONAL_MARKERS)
+# Set this to panels. For example, a panel may be one patient with their stimulated and unstimulated samples.
+PANELS=list(
+list(
+panel_files=c( "a_Ungated.fcs","b_Ungated.fcs" ),
+median_cols=NULL,
+reference_files=c("a_Ungated.fcs"),
+fold_cols=c("Time","Cell_length","CD3(Cd110)Dd","CD3(Cd111)Dd","CD3(Cd112)Dd","CD3(Cd114)Dd","CD19(Nd142)Dd","CD33(Nd148)Dd","CD235a(Sm152)Dd","CD11c(Tb159)Dd","DNA(Ir191)Dd","DNA(Ir193)Dd","CD14(Dy160)Dd","CD20(Dy161)Dd","CD8a(Dy162)Dd","CD45(Dy163)Dd","HLA-DR(Dy164)Dd","CD4(Gd158)Dd","Cd(110,111,112,114)")
+)
+)
 
 # Set this to the path to your local spade package installation -- if using a global installation, set to NULL.
 LIBRARY_PATH="lib/"
 
-# Set this to the reference file(s) to be used for fold-change calculations.  If multiple files are specified, the medians will be averaged.  If you don't have one, set to NULL
-REFERENCE_FILE=c("Basal1.fcs","Basal2.fcs")
-
-# Set this to the desired arcsinh cofactor to transform cytometry data [transformed_value = arcsinh(original_value/cofactor)]
-# CyTOF recommended value:  5
-# Fluorescence recommended value:  150
-ARCSINH_COFACTOR=5
+# Set this to the transforms for each channel
+TRANSFORMS=c("Cd(110,111,112,114)"=flowCore::arcsinhTransform(a=0, b=0.2), "CD11c(Tb159)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD14(Dy160)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD19(Nd142)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD20(Dy161)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD235a(Sm152)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd110)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd111)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd112)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD3(Cd114)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD33(Nd148)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD4(Gd158)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD45(Dy163)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "CD8a(Dy162)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "Cell_length"=flowCore::linearTransform(a=1.0), "DNA(Ir191)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "DNA(Ir193)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "HLA-DR(Dy164)Dd"=flowCore::arcsinhTransform(a=0, b=0.2), "Time"=flowCore::linearTransform(a=1.0))
 
 # Set this to the desired number of events remaining after downsampling files.  Recommended:  50000
 DOWNSAMPLED_EVENTS=50000
+# Set this to NULL if using downsampled_events.
+DOWNSAMPLING_TARGET_PCTILE=NULL
 
 # Set this to the desired number of events to use for clustering.  Recommended:  50000
 CLUSTERING_SAMPLES=50000
@@ -78,17 +79,19 @@ DOWNSAMPLING_EXCLUDE_PCTILE=0.01
 # Set this to the target number of clusters.  Algorithm will create clusters within 50% of this value.  Recommended:  200
 TARGET_CLUSTERS=200
 
-# Set this to the desired scale normalization in output graphs. Choices are "global", "local" or NULL. Recommend: "global"
-NORMALIZE="global"
-
-# Set this to create a second set of GML files with values normalized to a range of [-1, 1].  Set to FALSE to keep original values. Recommend: FALSE
-NORMALIZE_GML_FILES=FALSE
+# This is a linear multiplier for node size.
+NODE_SIZE_SCALE_FACTOR=1.2
 
 # Path to output directory.  Recommended:  "output/"
 OUTPUT_DIR="output/"
 
 # Path to temporary directory.  Recommended:  "/tmp/"
 TMPDIR="/tmp/"
+
+# Set this to the desired layout function.  Recommended:  SPADE.layout.arch
+# Option 1:  SPADE.layout.arch  ...this is fast, but allows overlapping nodes and edges
+# Option 2:  SPADE.layout.arch_layout  ...this is slow, but prevents overlapping nodes and edges
+LAYOUT_FUNCTION=SPADE.layout.arch
 
 ###################  No need to modify anything below this point ########################
 
@@ -111,19 +114,10 @@ Sys.setenv("OMP_NUM_THREADS"=NUM_THREADS)
 
 library("spade",lib.loc=LIBRARY_PATH)
 
-# Set this to the desired layout function.  Recommended:  SPADE.layout.arch
-# Option 1:  SPADE.layout.arch  ...this is fast, but allows overlapping nodes and edges
-# Option 2:  SPADE.layout.arch_layout  ...this is slow, but prevents overlapping nodes and edges
-LAYOUT_FUNCTION=SPADE.layout.arch
-
-SPADE.driver(FILE_TO_PROCESS, file_pattern="*.fcs", out_dir=OUTPUT_DIR, cluster_cols=SURFACE_MARKERS, arcsinh_cofactor=ARCSINH_COFACTOR, layout=LAYOUT_FUNCTION, median_cols=ALL_MARKERS, reference_files=REFERENCE_FILE, fold_cols=FUNCTIONAL_MARKERS, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
+SPADE.driver(FILE_TO_PROCESS, file_pattern="*", out_dir=OUTPUT_DIR, cluster_cols=CLUSTERING_MARKERS, panels=PANELS, transforms=TRANSFORMS, layout=LAYOUT_FUNCTION, downsampling_samples=DOWNSAMPLED_EVENTS, downsampling_target_pctile=DOWNSAMPLING_TARGET_PCTILE, downsampling_exclude_pctile=DOWNSAMPLING_EXCLUDE_PCTILE, k=TARGET_CLUSTERS, clustering_samples=CLUSTERING_SAMPLES)
 
 LAYOUT_TABLE <- read.table(paste(OUTPUT_DIR,"layout.table",sep=""))
 MST_GRAPH <- read.graph(paste(OUTPUT_DIR,"mst.gml",sep=""),format="gml")
-if (NORMALIZE_GML_FILES) {
-	SPADE.normalize.trees(OUTPUT_DIR,file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm",sep=""),normalize=NORMALIZE)
-	SPADE.plot.trees(MST_GRAPH,paste(OUTPUT_DIR,"norm",sep=""),file_pattern="*fcs*gml",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"norm/pdf",sep=""),scale=c(-1,1))
-}
 SPADE.plot.trees(MST_GRAPH,OUTPUT_DIR,file_pattern="*fcs*Rsave",layout=as.matrix(LAYOUT_TABLE),out_dir=paste(OUTPUT_DIR,"pdf",sep=""))
 
 Sys.unsetenv("OMP_NUM_THREADS")
