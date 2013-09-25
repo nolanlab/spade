@@ -235,8 +235,9 @@ SPADE.driver <- function(
 	for (p in params) {
 		pivot <- c()
 		names <- c()
-		for (f in files) {
+		for (f in files){
 			load(f)
+			f = basename(f)
 			if (p %in% colnames(anno)) {
 				pivot <- cbind(pivot, anno[,p])
 				names <- c(names, f)
@@ -250,10 +251,12 @@ SPADE.driver <- function(
 		}
 	}
 
+  byNodeData = list()
 	# Transposition 2: Rows are nodes, cols are params, files are files
 	dir.create(paste(out_dir,'tables','bySample',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (f in files) {
 		load(f)
+		f = basename(f)
 		pivot <- anno
 		names <- colnames(pivot)
 		pivot <- cbind(1:nrow(pivot),pivot)
@@ -264,8 +267,18 @@ SPADE.driver <- function(
 
 	# Transposition 3: Rows are params, cols are files, files are nodes
 	dir.create(paste(out_dir,'tables','byNodeID',sep='/'),recursive=TRUE,showWarnings=FALSE)
-	# TODO 
-
+	for (node in rownames(pivot)){
+      tableData = list()
+      for (f in files){
+        load(f)
+        f = basename(f)
+        tableData[[f]]= unlist(anno[node,,drop=T])
+      }
+      tableData = do.call("cbind",tableData)
+      write.csv(tableData, file=paste(out_dir,'/tables/byNodeId/',node,'_table','.csv',sep=''), row.names=TRUE,quote=F)  
+	}
+  
+	
 	invisible(NULL)
 }
 
