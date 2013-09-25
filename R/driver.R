@@ -247,11 +247,11 @@ SPADE.driver <- function(
 		pivot <- cbind(1:nrow(pivot),pivot)
 		colnames(pivot) <- c("name", names)
 		if (!is.null(pivot) && ncol(pivot) > 0) {
-			write.csv(pivot, file=paste(out_dir,'/tables/byAttribute/',p,'_table','.csv',sep=''), row.names=FALSE)
+			write.csv(pivot, file=paste(out_dir,'tables/byAttribute/',p,'_table','.csv',sep=''), row.names=FALSE)
 		}
 	}
 
-  byNodeData = list()
+	byNodeData = list()
 	# Transposition 2: Rows are nodes, cols are params, files are files
 	dir.create(paste(out_dir,'tables','bySample',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (f in files) {
@@ -262,22 +262,22 @@ SPADE.driver <- function(
 		pivot <- cbind(1:nrow(pivot),pivot)
 		colnames(pivot) <- c("ID", names)
 		name <- gsub("output/([[:alnum:][:punct:]]+).fcs.density.fcs.cluster.fcs.anno.Rsave", "\\1", f)
-		write.csv(pivot, file=paste(out_dir,'/tables/bySample/',name,'_table','.csv',sep=''), row.names=FALSE)
+		write.csv(pivot, file=paste(out_dir,'tables/bySample/',name,'_table','.csv',sep=''), row.names=FALSE)
 	}
 
 	# Transposition 3: Rows are params, cols are files, files are nodes
 	dir.create(paste(out_dir,'tables','byNodeID',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (node in rownames(pivot)){
-      tableData = list()
-      for (f in files){
-        load(f)
-        f = basename(f)
-        tableData[[f]]= unlist(anno[node,,drop=T])
-      }
-      tableData = do.call("cbind",tableData)
-      write.csv(tableData, file=paste(out_dir,'/tables/byNodeId/',node,'_table','.csv',sep=''), row.names=TRUE,quote=F)  
+		tableData = list()
+		for (f in files){
+			load(f)
+			f = basename(f)
+			tableData[[f]]= unlist(anno[node,,drop=T])
+		}
+		tableData = do.call("cbind",tableData)
+		write.csv(tableData, file=paste(out_dir,'tables/byNodeId/',node,'_table','.csv',sep=''), row.names=TRUE,quote=F)  
 	}
-  
+
 	
 	invisible(NULL)
 }
