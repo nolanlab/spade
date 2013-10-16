@@ -9,7 +9,7 @@ Please refer to the [wiki pages](https://github.com/nolanlab/spade/wiki), especi
 ## Developer Setup
 
 ### Prerequisites
-1. Latest version of [R](http://www.r-project.org/)
+1. [R 3.x](http://www.r-project.org/). Note that many of SPADE's dependencies are no longer available for R 2.15.x as of October 2013.
 1. igraph
 1. flowCore
 
@@ -18,14 +18,14 @@ The SPADE package has a C++ core that must be built before use. SPADE successful
 
     $ R CMD INSTALL <SPADE PATH>
 
-On Windows, you will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) that matches your R distribution. (Important note: if you're using R 2.14, you should use Rtools 2.15. Even though Rtools 2.14 is listed as compatible, it requires extra work to make g++ work. Rtools 2.15 works out of the box.) After installation make sure that your `PATH` contains the neccessary Rtools binary directories, e.g.:
+On Windows, you will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) that matches your R distribution. After installation make sure that your `PATH` contains the neccessary Rtools binary directories, e.g.:
 
 1. Open *Control Panel -> System*
 1. Click on *Advanced Tab* and then on *Environment Variables*
 1. Highlight *PATH* and click *Edit*
 1. In the character string in *Variable Value*, make sure the following appear (before other/older compilers):
 
-    c:\Rtools\bin;c:\Rtools\perl\bin;c:\Rtools\gcc-4.6.3\bin;c:\Rtools\MinGW\bin;c:\Program Files\R\<your R version>\bin;
+    c:\Rtools\bin;c:\Rtools\gcc-4.6.3\bin;c:\Program Files\R\<your R version>\bin;
 
 ### Building Packages
 Source packages can be built with
