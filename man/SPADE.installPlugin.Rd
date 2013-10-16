@@ -11,7 +11,7 @@ SPADE.installPlugin(cytoscape_path)
 }
 \arguments{
   \item{cytoscape_path}{
-Path to your Cytoscape install, e.g., on OSX it is typically something like '/Applications/Cytoscape_v2.8.1'
+Path to your Cytoscape install. For example, on OSX it is typically something like '/Applications/Cytoscape_v2.8.3'
 }
 }
 \details{
@@ -25,5 +25,5 @@ Michael Linderman
 }
 \examples{
 # On OSX:
-# SPADE.installPlugin("/Applications/Cytoscape_v2.8.1/")
+# SPADE.installPlugin("/Applications/Cytoscape_v2.8.3/")
 }

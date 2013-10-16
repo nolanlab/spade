@@ -7,14 +7,14 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), downsampling_samples=20000, downsampling_exclude_pctile=0.01, downsampling_target_pctile=0.05, k=200, clustering_samples=50000, layout=igraph0:::layout.kamada.kawai, pctile_color=c(0.02,0.98)) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), downsampling_target_number=NULL, downsampling_target_pctile=NULL, downsampling_target_percent=0.1, downsampling_exclude_pctile=0.01, k=200, clustering_samples=50000, layout=igraph0:::layout.kamada.kawai, pctile_color=c(0.02,0.98), fcs_channel_mappings_json=NULL) 
 }
 \arguments{
   \item{files}{
 Either a vector of FCS files, or a directory. If a directory, all of the *.fcs files in the directory are processed.
 }
   \item{file_pattern}{
-Wildcard pattern to match file if \code{files} is a director
+Wildcard pattern to match file if \code{files} is a director.
 }
   \item{out_dir}{
 Directory where output files are written. Will be created if it does not exist.
@@ -27,7 +27,7 @@ Usually a vector of strings specifying the columns to be used in the clustering,
 List of panels for median and fold change calculations. See details for specific structure. If NULL, medians are computed for all markers in all files.
 }
   \item{comp}{
-Apply compensation matrix if present in SPILL or SPILLOVER keywords
+Apply compensation matrix if present in SPILL or SPILLOVER keywords.
 }
 	\item{arcsinh_cofactor}{
 DEPRECATED. Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor)} of data.
@@ -35,26 +35,29 @@ DEPRECATED. Cofactor used in arcsinh transform \code{asinh(data/arcsinh_cofactor
 	\item{transforms}{
 Transform object to apply to data. A single transform object will be applied to all channels. To apply different transforms to specific channels use a named vector of transform objects (where names are parameter names). 
 }
-  \item{downsampling_samples}{
-Desired number of samples remaining after downsampling files
+  \item{downsampling_target_number}{
+Desired number of events remaining after downsampling files. Only meaningful if 'downsampling_target_percent' and 'downsampling_target_pctile' are 'NULL'.
+}
+  \item{downsampling_target_pctile}{
+Numeric value in [0,1]. Densities below this percentile, but above 'exclude_pctile' will be retained during downsampling. Only meaningful if 'downsampling_target_number' and 'downsampling_target_percent' are 'NULL'.
+}
+  \item{downsampling_target_percent}{
+Numeric value in [0,1]. Desired percent of events remaining after downsampling files. Percent is per-file (e.g. 0.1 is 10\% of each file). Only meaningful if 'downsampling_target_number' and 'downsampling_target_pctile' are 'NULL'.
 }
   \item{downsampling_exclude_pctile}{
 Numeric value in [0,1]. Densities below this percentile will be excluded during downsampling.
 }
-  \item{downsampling_target_pctile}{
-Numeric value in [0,1]. Densities below this percentile, but above 'exclude_pctile' will be retained during downsampling. Only meaningful if 'downsampling_samples' is 'NULL'.
-}
   \item{k}{
-Desirec number of clusters. Algorithm might create between [k/2,3k/2] clusters.
+Desired number of clusters.
 }
   \item{clustering_samples}{
-Desired number of samples to be used in clustering.
+Desired number of events (randomly selected) to be used in clustering after downsampling.
 }
   \item{layout}{
-Layout function
+Layout function.
 }
   \item{pctile_color}{
-A two element vector specifying lower and upper percentiles that should be used to set the color scale. Values below and above these percentiles will be forced to the 'smallest' and 'largest' color respectively. Not in effect if 'scale' is specified. Relevant for downstream tools that used global value ranges produced by driver.
+A two-element vector specifying lower and upper percentiles that should be used to set the color scale. Values below and above these percentiles will be forced to the 'smallest' and 'largest' color respectively. Not in effect if 'scale' is specified. Relevant for downstream tools that used global value ranges produced by driver.
 }
 }
 \details{
