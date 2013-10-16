@@ -4,7 +4,7 @@ SPADE.cluster <- function(tbl, k) {
 		warning("Potentially too many observations for the clustering step",immediate=TRUE);
 	}
 
-	if (nrow(tlb) < k) {
+	if (nrow(tbl) < k) {
 		stop("Number of requested clusters exceeds number of events")
 	}
 
