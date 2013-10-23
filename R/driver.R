@@ -275,7 +275,7 @@ SPADE.driver <- function(
 			tableData[[f]]= unlist(anno[node,,drop=T])
 		}
 		tableData = do.call("cbind",tableData)
-		write.csv(tableData, file=paste(out_dir,'tables/byNodeId/',node,'_table','.csv',sep=''), row.names=TRUE,quote=F)  
+		write.csv(tableData, file=paste(out_dir,'tables/byNodeID/',node,'_table','.csv',sep=''), row.names=TRUE,quote=F)  
 	}
 
 	
