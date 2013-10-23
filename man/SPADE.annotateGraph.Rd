@@ -42,6 +42,6 @@ Michael Linderman
 	#SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
 
 	## Add additional parameters to output graphs using SPADE.annotateGraph
-	#old_graph <- igraph0:::read.graph(paste(output_dir,"SimulatedRawData.fcs.density.fcs.cluster.fcs.medians.gml",sep=.Platform$file.sep),format="gml")
-	#new_graph <- SPADE.annotateGraph(old_graph, layout=igraph0:::layout.kamada.kawai(old_graph), anno=list(demo=matrix(1:igraph0:::vcount(old_graph))))
+	#old_graph <- igraph:::read.graph(paste(output_dir,"SimulatedRawData.fcs.density.fcs.cluster.fcs.medians.gml",sep=.Platform$file.sep),format="gml")
+	#new_graph <- SPADE.annotateGraph(old_graph, layout=igraph:::layout.kamada.kawai(old_graph), anno=list(demo=matrix(1:igraph:::vcount(old_graph))))
 }

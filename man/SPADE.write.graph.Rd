@@ -44,6 +44,6 @@ Michael Linderman
 	#SPADE.driver(data_file_path, out_dir=output_dir, cluster_cols=c("marker1","marker2"))
 
 	## Read and write minimum spanning tree graph 
-	#mst_graph <- igraph0:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+	#mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
 	#SPADE.write.graph(mst_graph, file = paste(output_dir,"new_mst.gml",sep=.Platform$file.sep), format = c("gml"))
 }

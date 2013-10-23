@@ -7,7 +7,7 @@ SPADE workflow driver
 A function to drive the SPADE workflow. Produces graphs annoated with parameter medians and fold change.
 }
 \usage{
-SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), downsampling_target_number=NULL, downsampling_target_pctile=NULL, downsampling_target_percent=0.1, downsampling_exclude_pctile=0.01, k=200, clustering_samples=50000, layout=igraph0:::layout.kamada.kawai, pctile_color=c(0.02,0.98), fcs_channel_mappings_json=NULL) 
+SPADE.driver(files, file_pattern="*.fcs", out_dir=".", cluster_cols=NULL, panels=NULL, comp=TRUE, arcsinh_cofactor=NULL, transforms=flowCore::arcsinhTransform(a=0, b=0.2), downsampling_target_number=NULL, downsampling_target_pctile=NULL, downsampling_target_percent=0.1, downsampling_exclude_pctile=0.01, k=200, clustering_samples=50000, layout=igraph:::layout.kamada.kawai, pctile_color=c(0.02,0.98), fcs_channel_mappings_json=NULL) 
 }
 \arguments{
   \item{files}{

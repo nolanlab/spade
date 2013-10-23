@@ -64,6 +64,6 @@ Michael Linderman
 
 	## Compute medians, counts and other parameters from processed files
 	#upsampled_file_path <- paste(output_dir,.Platform$file.sep,basename(data_file_path),".density.fcs.cluster.fcs",sep="")
-	#mst_graph <- igraph0:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
-	#anno <- SPADE.markerMedians(upsampled_file_path, igraph0:::vcount(mst_graph), cols = c("marker1","marker2"))
+	#mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+	#anno <- SPADE.markerMedians(upsampled_file_path, igraph:::vcount(mst_graph), cols = c("marker1","marker2"))
 }

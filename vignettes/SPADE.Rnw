@@ -1,0 +1,172 @@
+%\VignetteIndexEntry{spade package}
+%\VignetteKeywords{Preprocessing,statistics}
+
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage[authoryear,round]{natbib}
+\usepackage{graphicx}
+\usepackage{fullpage}
+
+\title{SPADE: Spanning Tree Progression of Density Normalized Events}
+\author{Michael Linderman, Erin Simonds, Zach Bjornson, Peng Qiu}
+
+\begin{document}
+\setkeys{Gin}{width=.8\textwidth, height=.8\textwidth}
+
+<<echo=FALSE, results=hide>>=
+sanitize <- function(str) {
+  gsub('\\','/',str,fixed=TRUE)
+}
+@
+
+
+\maketitle
+\begin{center}
+{\tt michael.d.linderman@gmail.com}
+\end{center}
+
+\textnormal{\normalfont}
+
+\tableofcontents
+\newpage
+
+\section{Licensing}
+\textbf{SPADE} is licensed under the GPL-2 (or later) and you are free to use and redistribute this software under the terms of that license. However, we ask you to cite the following paper if you use this software for publication.
+
+\begin{enumerate}
+\item Qiu, P., Simonds, E. F., Bendall, S. C., Gibbs, K. D., Bruggner, R., Linderman, M. D., Sachs, K., Nolan, G. P., Plevritis, S. K. (2011). Extracting a cellular hierarchy from high-dimensional cytometry data with SPADE. {\it Nature Biotechnology} 29, 886-891 (2011).
+\end{enumerate}
+
+\section{Overview}
+
+Recent advances in flow cytometry, specifically mass cytometry \cite{Bendall06052011}, enable simultaneous single-cell measurement of 30+ surface surface intracellular proteins. With such tools it is possible to measure, in a single experiment, enough markers to identify and compare functional immune activities across nearly all cell types in the human hematopoietic lineage. However practical approaches to analyze and visualize data at this scale were not previously available.
+
+SPADE \cite{Qiu10022011}, spanning tree progression of density normalized events, is an algorithm to organize cells into hierarchies of related phenotypes. These hierarchies, or tree structures, facilitate visualization of developmental lineages, identification of rare cell types, and comparison of functional markers across cell types and stimuli.
+
+This package provides a performant implementation of SPADE, and an accompanying plugin for Cytoscape that provides a GUI for visualizing SPADE trees in the context of the underlying cytometry data.
+
+\section{Installation}
+\label{sec:install}
+
+\textbf{SPADE} is distributed via bioconductor and can be installed via the \texttt{biocLite} script. The \textbf{SPADE} source package should build on any platform with a modern C++ compiler (and on Windows with \texttt{Rtools}). On Linux/Unix/OSX platforms with a C++ compiler that supports OpenMP, \textbf{SPADE} will be built with support for multicore and shared memory multi-processor systems. By default, OpenMP is disabled when building on Windows platforms due to difficulties with the pthreads compatibility DLLs. 
+
+Those users wishing to enable OpenMP support on Windows will need to modify \texttt{src/Makevars.win} to include the following compiler flags:
+\begin{verbatim}
+PKG_CXXFLAGS=-fopenmp 
+PKG_LIBS=-mthreads -lgomp -lpthread
+\end{verbatim}
+and ensure that the necessary pthreads compatibility libraries are installed. These libraries can be downloaded for 32-bit Windows installations at \url{http://sourceware.org/pthreads-win32}. 
+
+\textbf{SPADE} can be used as a stand-alone package, or with an accompanying Cytoscape plugin termed ``CytoSPADE". Cytoscape is a free and open-source network visualization tool that can be downloaded at \url{http://cytoscape.org}. After installing Cytoscape, the CytoSPADE plugin can be installed via the \texttt{SPADE.installPlugin} function included in the \textbf{SPADE} package. It takes a single argument with the path the Cytoscape install directory, for example on OSX,
+\begin{verbatim}
+SPADE.installPlugin("/Applications/Cytoscape_v2.8.1/")
+\end{verbatim}
+would install the plugin.
+
+Once installed, CytoSPADE can be invoked from Cytoscape's Plugins menu. The plugin helps users setup SPADE analyses, and once those analyses are completed, to interactively view the trees produced by SPADE in the context of the underlying flow cytometry data. Figure~\ref{fig:cytospade} shows a screenshot of the plugin in use. The plugin links the traditional biaxial plot, familiar to flow cytometry practioners, with the trees produced by \textbf{SPADE}. Selecting nodes in the tree view, for instance, will show just the cells that belong to those nodes in the biaxial plot. Note that to use the \textbf{SPADE} R package from within Cytoscape \texttt{Rscript} must be in your path.
+
+\begin{figure}
+\centering
+\includegraphics{cytospade.png}
+\label{fig:cytospade}
+\caption{Screenshot of CytoSPADE Cytoscape plugin. Note that the biaxial plot (left) highlights those cells belonging to the nodes selected in the tree view (right).}
+\end{figure}
+
+
+\section{Example}
+
+To demonstrate the functionality of \textbf{SPADE}, we use \texttt{SimulatedRawData.fcs}, a simple two-parameter synthetic dataset included in the \texttt{extdata} directory of the package. 
+
+<<loadSPADE, results=hide>>=
+library(spade)
+@
+
+<<sampleData >>=
+data_file_path = system.file(file.path("extdata","SimulatedRawData.fcs"), package = "spade")
+@
+
+The example data, shown in Figure~\ref{fig:biaxial}, has two parameters with (in \texttt{arcsinh} space) a very apparent ``trident" structure. We would like \textbf{SPADE} to be able to recover that structure from the data, and in particular capture the rare population at the ``base'' of the trident and the transitional populations.
+
+\begin{figure}
+\centering
+<<plotSampleData, fig=TRUE, echo=FALSE>>=
+library(flowViz)
+fcs <- read.FCS(data_file_path)
+plot(transform("marker1"=asinh, "marker2"=asinh) %on% fcs)
+@
+\label{fig:biaxial}
+\caption{Biaxial plot of the two markers in the sample FCS file transformed into \texttt{arcsinh} space. Note the varying population densities, and in particular the rare population where both markers are ``low".}
+\end{figure}
+
+The typical entry point to \textbf{SPADE} is the driver function. The driver orchestrates the four steps of the SPADE workflow:
+\begin{enumerate}
+\item per-FCS file density dependent downsampling to create uniform cellular density and better capture rare populations
+\item across-FCS files unsupervised agglomerative hierarchical clustering to identify distinct sub-populations
+\item build a minimum spanning tree that links those clusters
+\item per-FCS files upsampling to assign cells to those clusters
+\end{enumerate}
+and provides useful defaults for \textbf{SPADE's} many control parameters.
+
+Basic use of the driver with the sample FCS file would look like the following. In this example we are clustering on the two parameters \texttt{marker1} and \texttt{marker2} shown in Figure~\ref{fig:biaxial} and are transforming the data with the \texttt{arcsinh} transform supplied in the \textbf{flowCore} package. Numerous other transforms are provided by \textbf{flowCore}.
+
+More typically one clusters on a subset of the parameters, such as just surface markers, and then annotates the tree with medians and fold change values for the other, potentially functional, markers. Also more typically, one works with many FCS files. The driver will also accept a vector of files, or a directory containing the FCS files to be analyzed (the latter is the most common usage).
+
+<<runSPADE >>=
+output_dir <- tempdir()
+transforms <- c(`marker1`=flowCore::arcsinhTransform(a=0, b=0.2), `marker2`=flowCore::arcsinhTransform(a=0, b=0.2))
+SPADE.driver(data_file_path, out_dir=output_dir, transforms=transforms, cluster_cols=c("marker1","marker2"))
+@
+
+\textbf{SPADE} produces a number of files in the \texttt{output} directory including annotated tree structures for each FCS file. These trees are saved as GML files that can be opened by a number of graph visualization packages, including Cytoscape.
+
+<<seeOutput echo=FALSE>>=
+grep("^libloc",dir(output_dir),invert=TRUE,value=TRUE)
+@
+
+It is often helpful to visualize the results directly. \textbf{SPADE} includes functions for plotting all possible trees as PDFs.
+
+<<plotTrees >>=
+mst_graph <- igraph:::read.graph(paste(output_dir,"mst.gml",sep=.Platform$file.sep),format="gml")
+layout    <- read.table(paste(output_dir,"layout.table",sep=.Platform$file.sep))
+SPADE.plot.trees(mst_graph, output_dir, out_dir=paste(output_dir,"pdf",sep=.Platform$file.sep), layout=as.matrix(layout))
+@
+
+The number of plots is the product of the number of FCS files and number of annotated markers, i.e., there is a plot for each FCS file and each annotation parameters (median or fold change). In this simple case there is only one file, and thus we cannot compute any fold changes. We can however look at per-cluster medians of \texttt{marker1} and \texttt{marker2} (that is the median value for that marker for all cells assigned to a particular cluster).
+
+<<renameFiles, results=hide, echo=FALSE>>=
+file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker1_clust.pdf"),file.path(output_dir,"pdf","marker1.pdf"));
+file.rename(file.path(output_dir,"pdf","SimulatedRawData.fcs.density.fcs.cluster.fcs.anno.Rsave.mediansmarker2_clust.pdf"),file.path(output_dir,"pdf","marker2.pdf"));
+@
+
+\begin{figure}
+\centering
+\includegraphics{{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker1"))}}}}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics{{{\Sexpr{sanitize(file.path(output_dir,"pdf","marker2"))}}}}
+\end{figure}
+
+Although not immediately obvious, after looking for a moment we can see the ``trident" structure in these plots. Specifically we see the three branches where one or both of \texttt{marker1} and \texttt{marker2} are ``high" and the rare populate where both markers are ``low". Further we can see the transitional populations between the base and tips of the trident. 
+
+This simple example is intended to show how \textbf{SPADE} can successfully recover the underlying ``structure" of our data -- the ``trident". In the immunological context, we seek to recover the structure of differentiation of immune cells, and in particular the hematopoietic lineage. We exploit the fact that ``parents" and ``children" in that differentiation process are close to each other in surface marker space, and further, are linked to together by transitional populations. By over-clustering and then linking those clusters we can successfully recover the structure of the differentiation process and then use that structure as a scaffolding on which to overlay phenotypic data of interest.
+
+In this case we are viewing the median value of the two surface markers overlaid on the entire structure of the data. Additional markers, or fold-change of markers, can be viewed similarly. 
+
+\begin{figure}
+\centering
+\includegraphics{science-tree-cd34.png}
+\label{fig:science}
+\caption{SPADE tree annotated with CD34 expression in healthy human bone marrow (PBMC) samples analyzed via mass cytometry. Adapted from \cite{Bendall06052011}.}
+\end{figure}
+
+As a more complex example, Figure~\ref{fig:science} shows the result from an actual SPADE analysis of 30+ parameter flow cytometry data collected with the CyToF mass cytometer performed for \cite{Bendall06052011} (that is not generated as part of this vignette). Cells were clustered using 13 surface markers. Putative cell populations were annotated manually and the nodes moved  on the page to better resemble textbook drawings of the hematopoietic lineage. However, the trees themselves, that is the nodes and edges, were produced automatically and unsupervised by the SPADE algorithm. The tree in Figure~\ref{fig:science} is annotated with median expression of CD34, which as expected is "high" for hematopoietic stem cells (HSCs). This tree shows how SPADE can recover the structure of hematopoietic lineage, including rare populations such as HSCs, and how that structure can be used as a scaffold on which additional data is overlaid.
+
+This example workflow gives a brief introduction to using \textbf{SPADE}. The interested user is pointed to \cite{Qiu10022011}, and in particular it supplemental material, as well as \cite{Bendall06052011} for more detail about the SPADE algorithm and how it can be used to analyze flow cytometry data. Additional documentation for SPADE (including a wiki), the source code, bug tracker and other material can be found at \url{http://cytospade.org}.
+
+\clearpage
+\bibliographystyle{plainnat} 
+\bibliography{spaderef}
+\end{document}
