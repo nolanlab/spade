@@ -228,8 +228,8 @@ SPADE.driver <- function(
 	# Find the files
 	files <- dir(out_dir,full.names=TRUE,pattern=glob2rx("*.anno.Rsave"))
 	# Find all the params
-	params <- unique(as.vector(sapply(files, function(f) { load(f); colnames(anno); })))
-
+	params <- unique(unlist(sapply(files, function(f) { load(f); colnames(anno); })))
+	
 	# Transposition 1: Rows are nodes, cols are files, files are params
 	dir.create(paste(out_dir,'tables','byAttribute',sep='/'),recursive=TRUE,showWarnings=FALSE)
 	for (p in params) {
