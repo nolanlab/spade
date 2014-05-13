@@ -41,7 +41,13 @@ SPADE.transform.matrix <- function(mat, tform=NULL) {
 		mat  # No-op
 	} else {
 		if (class(tform) == "transform") {
-			apply(mat, 2, tform)
+                        if (is.matrix(mat)) {
+                                apply(mat, 2, tform)
+                        } else if (is.vector(mat)) {
+                                transform(mat)
+                        } else {
+                                throw("Unknown format was detected on SPADE.transform.matrix(mat, tform).")
+                        }
 		} else {
 			for (name in intersect(colnames(mat), names(tform))) {
 				mat[,name] <- tform[[name]](mat[,name])
