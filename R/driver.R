@@ -228,7 +228,7 @@ SPADE.driver <- function(
 	# Find the files
 	files <- dir(out_dir,full.names=TRUE,pattern=glob2rx("*.anno.Rsave"))
 	# Find all the params
-	params <- unique(unlist(sapply(files, function(f) { load(f); colnames(anno); })))
+	params <- unique(unlist(c(sapply(files, function(f) { load(f); colnames(anno); })))) #Update to remove redundant file writing
 	
 	# Transposition 1: Rows are nodes, cols are files, files are params
 	dir.create(paste(out_dir,'tables','byAttribute',sep='/'),recursive=TRUE,showWarnings=FALSE)
