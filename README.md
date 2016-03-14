@@ -10,11 +10,14 @@ We no longer support distribution via CRAN or Bioconductor. The instructions bel
 
 1. If you do not have version 3.0 or later of [R](http://www.r-project.org/), install it ([OSX](http://cran.rstudio.com/bin/macosx/), [Windows](http://cran.rstudio.com/bin/windows/), [Linux](http://cran.rstudio.com/bin/linux/)). Unless you have a compelling reason to do otherwise, we suggest the 64-bit version of R. 
 
-1. Install the devtools and SPADE packages:
+1. Install the devtools, Rclusterpp (latest) and SPADE packages:
 
         R> install.packages("devtools")
         R> library(devtools)
+        R> devtools::install_github("nolanlab/Rclusterpp")
         R> devtools::install_github("nolanlab/spade")
+
+(The version of Rclusterpp in CRAN (0.2.3) is out of date; the above installs the latest (i.e. >= 0.2.4).)
 
 1. Test the installation by typing at the R prompt:
 
