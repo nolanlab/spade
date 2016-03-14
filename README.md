@@ -29,7 +29,7 @@ We no longer support distribution via CRAN or Bioconductor. The instructions bel
         Loading required package: RcppEigen
 
 ## Usage
-Edit the file R/inst/runSPADE.R to setup your analysis, then run the file. For additional documentation about the R package, you can view the package vignette with `vignette("SPADE")` at the R prompt. Additionally all of the functions in the SPADE R package are documented; view their manual pages with `?<function>`, e.g., `?SPADE.driver`, at the R prompt.
+Check out the [example usage wiki page](https://github.com/nolanlab/spade/wiki/Example-Usage). Once you are familiar with the workflow, you can edit the file R/inst/runSPADE.R to setup your analysis, then run the file. For additional documentation about the R package, you can view the package vignette with `vignette("SPADE")` at the R prompt. Additionally all of the functions in the SPADE R package are documented; view their manual pages with `?<function>`, e.g., `?SPADE.driver`, at the R prompt.
 
 ## Developer Setup
 
