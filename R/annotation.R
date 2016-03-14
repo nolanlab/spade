@@ -89,7 +89,7 @@ SPADE.layout.arch <-  function(mst_graph) {
 	# Find the distance between nodes measured in "hops"
 	hops <- c()
 	for (v in V(mst_graph)) {
-		hops <- rbind(hops,unlist(lapply(get.shortest.paths(mst_graph,v),length))-1)
+		hops <- rbind(hops, unlist(lapply(get.shortest.paths(mst_graph,v)$vpath, length)))
 	}
 
 
@@ -98,14 +98,13 @@ SPADE.layout.arch <-  function(mst_graph) {
 	v_pos <- array(0,c(vcount(mst_graph),2))
 
 	# The longest path is the backbone arch
-	terminals <- which(hops == max(hops), arr.ind=TRUE)[1,] - 1  # igraph vertices are 0-indexed
+	terminals <- which(hops == max(hops), arr.ind=TRUE)[1,]
 	back_bone <- unlist(get.shortest.paths(mst_graph, from=terminals["row"], to=terminals["col"]))
-	  
 	# Layout the backbone arch along an arc
 	bb_span <- pi * .55  # span in radians of back bone arch
 	bb_unit <- 50.0  # unit distance bewteen nodes
 	angles  <- seq(pi/2-bb_span/2, pi/2+bb_span/2, length.out=length(back_bone)) 
-	v_pos[back_bone+1,] <- bb_unit*length(back_bone)*cbind(cos(angles),-sin(angles))
+	v_pos[back_bone,] <- bb_unit*length(back_bone)*cbind(cos(angles),-sin(angles))
 
 	# Layout the side chains as trees normal to the backbone
 	for (v in back_bone) {
@@ -114,29 +113,29 @@ SPADE.layout.arch <-  function(mst_graph) {
 		# Note: E(mst_graph,P=c(mapply(c,v,n))) == E(mst_graph)[v %--% n] but is much faster
 		n <- intersect(neighbors(mst_graph, v), back_bone)
 		side_v <- sort(subcomponent(delete.edges(mst_graph,E(mst_graph,P=c(mapply(c,v,n)))),v))
-		
+
 		# Compute layout for side chains and integrate it into overall layout 
 		# Note: Relies on side_v being in sorted order
 		if (length(side_v) > 1) {
 			# Convert side chains to directed graph, deleting edges with decreasing hop distance
-			side_h <- hops[v+1,side_v+1]  # hops between back_bone node and side chain
-			side_g <- as.directed(subgraph(mst_graph,side_v),mode="mutual")
-			e <- get.edges(side_g,E(side_g))+1  # edges as a matrix, recall igraph is 0-indexed
+			side_h <- hops[v, side_v]  # hops between back_bone node and side chain
+			sg <- induced_subgraph(mst_graph, as.vector(side_v))
+			side_g <- as.directed(sg, mode="mutual")
+			e <- get.edges(side_g,E(side_g))  # edges as a matrix
 			side_g <- delete.edges(side_g,subset(E(side_g),side_h[e[,1]] > side_h[e[,2]]))	   
 
 			# Layout side chain
 			# -----------------------------------------------------------------
-			root <- which.min(side_h)-1
+			root <- which.min(side_h)
 			layout <- layout.reingold.tilford(side_g,root=root)
-	
+
 			# rotate tree to be normal to back bone
 			polar <- cbind(atan2(layout[,2],layout[,1]), sqrt(rowSums(layout^2)))
 			polar[,1] <- polar[,1] + angles[back_bone==v] - pi/2
 			layout <- bb_unit*polar[,2]*cbind(cos(polar[,1]),-sin(polar[,1]))	    
-	
 			# translate layout to back_bone 	    
-			layout <- layout + matrix(v_pos[v+1,] - layout[root+1,], nrow=nrow(layout), ncol=2, byrow=TRUE)
-			v_pos[side_v+1,] <- layout
+			layout <- layout + matrix(v_pos[v,] - layout[root,], nrow=nrow(layout), ncol=2, byrow=TRUE)
+			v_pos[side_v,] <- layout
 		}
 	}
 	v_pos
