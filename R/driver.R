@@ -54,8 +54,13 @@ SPADE.driver <- function(
 	fcs_channel_mappings_json=NULL
 ) {
 
-	if (length(files) == 1 && file.info(files)$isdir) {
-		files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
+	if (length(files) == 1) {
+		if (!file.exists(files)) {
+			stop(paste("File not found:", files))
+		}
+		if (file.info(files)$isdir) {
+			files <- dir(SPADE.strip.sep(files),full.names=TRUE,pattern=glob2rx(file_pattern))
+		}
 	}
 	if (length(files) == 0) {
 		stop("No input files found")
