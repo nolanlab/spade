@@ -34,25 +34,6 @@ SPADE.flattenAnnotations <- function(annotations) {
 	flat
 }
 
-SPADE.installPlugin <- function(cytoscape_path) {
-	source_path = system.file(paste("tools","CytoSPADE.jar",sep=.Platform$file.sep), package = "spade")        
-	stopifnot(file.exists(source_path))
-
-	target_path = paste(cytoscape_path,"plugins",sep=.Platform$file.sep)
-	if (!file.exists(target_path) && !file.info(target_path)$isdir) {
-		stop(paste("Unable to locate Cytoscape plugins directory in:",target_path,sep=' '))
-	}
-	result <- file.copy(source_path, paste(target_path,"CytoSpade.jar",sep=.Platform$file.sep), overwrite=TRUE)
-	if (result) {
-		message(paste("Successfully installed CytoSPADE plugin in:",target_path,sep=" "))
-	}
-	else {
-		stop(paste("Error in installing plugin to:",target_path,sep=" "))
-	}
-	invisible(result)
-}
-
-
 SPADE.driver <- function(
 	files,
 	file_pattern="*.fcs", 
