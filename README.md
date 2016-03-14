@@ -1,43 +1,39 @@
 # SPADE: Spanning Tree Progression of Density Normalized Events
 
-SPADE is a visualization and analysis tool for high-dimensional flow cytometry data. SPADE is implemented as an R package and can be installed via R's packaging facilities. Additionally a GUI is provided, as a [Cytoscape](http://www.cytoscape.org) plugin, for setting-up and interactively visualizing the results of SPADE analyses. Please see the project homepage at [cytospade.org](http://www.cytospade.org) or the [wiki](https://github.com/nolanlab/spade/wiki) for the primary documentation.
+SPADE is a visualization and analysis tool for high-dimensional flow cytometry data. SPADE is implemented as an R package that takes in FCS files and settings, and outputs graph files (GML), PDFs of the graphs and FCS files with the "cluster" column appended. Please see the project homepage at [cytospade.org](http://www.cytospade.org) or the [wiki](https://github.com/nolanlab/spade/wiki) for the primary documentation.
+
+We no longer support the Cytoscape GUI. An interactive viewer is available from www.cytobank.org. The PDF files can be edited (e.g. graphs can be rearranged) with software such as Adobe Illustrator. For more complex usages, many languages are able to read GML files, including R, Mathematica and Python.
 
 ## User Setup
 
-Please refer to the [wiki pages](https://github.com/nolanlab/spade/wiki), especially the [Getting Started](https://github.com/nolanlab/spade/wiki/GettingStarted) page.
+We no longer support distribution via CRAN or Bioconductor. The instructions below install directly from Github and will ensure you have the latest release.
+
+1. If you do not have version 3.0 or later of [R](http://www.r-project.org/), install it ([OSX](http://cran.rstudio.com/bin/macosx/), [Windows](http://cran.rstudio.com/bin/windows/), [Linux](http://cran.rstudio.com/bin/linux/)). Unless you have a compelling reason to do otherwise, we suggest the 64-bit version of R. 
+
+1. Install the devtools and SPADE packages:
+
+        R> install.packages("devtools")
+        R> library(devtools)
+        R> devtools::install_github("nolanlab/spade")
+
+1. Test the installation by typing at the R prompt:
+
+        R> library(spade)
+
+    You should see output like the following:
+
+        R> library('spade')
+        Loading required package: igraph
+        Loading required package: Rclusterpp
+        Loading required package: Rcpp
+        Loading required package: RcppEigen
+
+## Usage
+Edit the file R/inst/runSPADE.R to setup your analysis, then run the file. For additional documentation about the R package, you can view the package vignette with `vignette("SPADE")` at the R prompt. Additionally all of the functions in the SPADE R package are documented; view their manual pages with `?<function>`, e.g., `?SPADE.driver`, at the R prompt.
 
 ## Developer Setup
 
-### Prerequisites
-1. [R 3.x](http://www.r-project.org/). Note that many of SPADE's dependencies are no longer available for R 2.15.x as of October 2013.
-1. igraph
-1. flowCore
-
-### Building and Installing
-The SPADE package has a C++ core that must be built before use. SPADE successfully builds on Linux, OSX and Windows (with Rtools), although Windows users will not be able to take advantage of the OpenMP parallelization used within SPADE. SPADE can be installed from the command line via
-
-    $ R CMD INSTALL <SPADE PATH>
-
-On Windows, you will need to install the [Rtools](http://www.murdoch-sutherland.com/Rtools) that matches your R distribution. After installation make sure that your `PATH` contains the neccessary Rtools binary directories, e.g.:
-
-1. Open *Control Panel -> System*
-1. Click on *Advanced Tab* and then on *Environment Variables*
-1. Highlight *PATH* and click *Edit*
-1. In the character string in *Variable Value*, make sure the following appear (before other/older compilers):
-
-    c:\Rtools\bin;c:\Rtools\gcc-4.6.3\bin;c:\Program Files\R\<your R version>\bin;
-
-### Building Packages
-Source packages can be built with
-
-    $ R CMD build <SPADE PATH>
-
-and binary packages with
-
-    $ R CMD build --no-vignettes --binary <SPADE PATH>
-
-### Tips and Resources
-* [R manual for writing extensions](http://cran.r-project.org/doc/manuals/R-exts.html)
+Please refer to the [wiki pages](https://github.com/nolanlab/spade/wiki).
 
 - - -
 
